@@ -70,5 +70,99 @@ export function useNotificationSettings() {
   );
 
   // Toggle the user's intent to receive alerts.
-  const togglePush =
-    
+  const togglePush = useCallback(
+    (enabled: boolean) => {
+      update({ pushEnabled: enabled });
+    },
+    [update]
+  );
+
+  // Request browser notification permission explicitly.
+  const requestPermission = useCallback(async (): Promise<
+    NotificationPermission | "unsupported"
+  > => {
+    if (!("Notification" in window)) return "unsupported";
+
+    try {
+      let permission = Notification.permission;
+      if (permission === "default") {
+        permission = await Notification.requestPermission();
+      }
+
+      if (permission === "granted") {
+        update({ pushEnabled: true });
+      } else {
+        update({ pushEnabled: false });
+      }
+
+      return permission;
+    } catch {
+      return Notification.permission || "unsupported";
+    }
+  }, [update]);
+
+  const toggleCategory = useCallback(
+    (cat: Category) => {
+      setSettings((prev) => {
+        const exists = prev.alertCategories.includes(cat);
+        const alertCategories = exists
+          ? prev.alertCategories.filter((c) => c !== cat)
+          : [...prev.alertCategories, cat];
+        const next = { ...prev, alertCategories };
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  // Mark that a summary notification was just delivered.
+  const markNotified = useCallback(() => {
+    setSettings((prev) => {
+      const next = { ...prev, lastNotifiedAt: new Date().toISOString() };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
+  return {
+    settings,
+    update,
+    togglePush,
+    requestPermission,
+    toggleCategory,
+    markNotified,
+    persist,
+  };
+}
+
+// Whether the current time matches the configured alert time (within the same minute).
+export function isAlertTime(now: Date, alertTime: string): boolean {
+  const [h, m] = alertTime.split(":").map((n) => parseInt(n, 10));
+  if (isNaN(h) || isNaN(m)) return false;
+  return now.getHours() === h && now.getMinutes() === m;
+}
+
+// Returns true if a summary was already delivered today.
+export function alreadyNotifiedToday(
+  lastNotifiedAt: string | null,
+  now: Date
+): boolean {
+  if (!lastNotifiedAt) return false;
+  const last = new Date(lastNotifiedAt);
+  if (isNaN(last.getTime())) return false;
+  return (
+    last.getFullYear() === now.getFullYear() &&
+    last.getMonth() === now.getMonth() &&
+    last.getDate() === now.getDate()
+  );
+}
+  
