@@ -1,0 +1,2 @@
+[functions.news]
+verify_jwt = false
