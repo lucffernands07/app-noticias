@@ -7,10 +7,6 @@ import {
   type NotificationSettings,
 } from "@/lib/settings";
 
-// Background scheduler: checks every 30s whether the current time matches the
-// configured alert time. When it does, fetches news for the selected alert
-// categories and fires a native system notification via the service worker.
-// Deduplicates within the same day so we never notify twice for the same slot.
 export function useNotificationScheduler(
   settings: NotificationSettings,
   markNotified: () => void
@@ -24,14 +20,18 @@ export function useNotificationScheduler(
       return;
     if (settings.alertCategories.length === 0) return;
 
-    const CHECK_INTERVAL = 30_000;
+    // Verificação a cada 15 segundos para maior precisão no minuto programado
+    const CHECK_INTERVAL = 15_000;
 
     const check = async () => {
       const s = settingsRef.current;
       if (!s.pushEnabled) return;
       if (!("Notification" in window) || Notification.permission !== "granted")
         return;
+      
       const now = new Date();
+      
+      // Valida se o horário atual bate com o configurado e se já não foi enviado hoje
       if (!isAlertTime(now, s.alertTime)) return;
       if (alreadyNotifiedToday(s.lastNotifiedAt, now)) return;
 
@@ -39,10 +39,16 @@ export function useNotificationScheduler(
         s.alertCategories as Category[],
         s.frequency
       );
-      if (ok) markNotified();
+      
+      if (ok) {
+        markNotified();
+      }
     };
 
+    // Executa uma verificação imediata ao montar e depois a cada intervalo
+    check();
     const id = setInterval(check, CHECK_INTERVAL);
+    
     return () => clearInterval(id);
   }, [
     settings.pushEnabled,
