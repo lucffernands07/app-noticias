@@ -1,11 +1,5 @@
-export type Category =
-  | "geral"
-  | "politica"
-  | "tecnologia"
-  | "economia"
-  | "mundo"
-  | "saude"
-  | "futebol";
+// Aceita 'geral' ou qualquer outro tema/palavra-chave adicionado pelo utilizador
+export type Category = string;
 
 export type NewsItem = {
   title: string;
@@ -18,26 +12,18 @@ export type NewsItem = {
 
 export type NewsResponse = {
   items: NewsItem[];
+  categories?: string[];
   fetchedAt?: string;
   error?: string;
 };
 
-export const CATEGORIES: { id: Category; label: string }[] = [
+// Categorias padrão sugeridas para quando o utilizador ainda não adicionou personalizações
+export const DEFAULT_CATEGORIES: { id: Category; label: string }[] = [
   { id: "geral", label: "Geral" },
+  { id: "ti", label: "TI" },
+  { id: "ia", label: "IA" },
+  { id: "windows", label: "Windows" },
+  { id: "cloud", label: "Cloud" },
+  { id: "corinthians", label: "Corinthians" },
   { id: "politica", label: "Política" },
-  { id: "tecnologia", label: "Tecnologia" },
-  { id: "economia", label: "Economia" },
-  { id: "mundo", label: "Mundo" },
-  { id: "saude", label: "Saúde" },
-  { id: "futebol", label: "Futebol" },
 ];
-
-export const CATEGORY_LABELS: Record<string, string> = {
-  geral: "Geral",
-  politica: "Política",
-  tecnologia: "Tecnologia",
-  economia: "Economia",
-  mundo: "Mundo",
-  saude: "Saúde",
-  futebol: "Futebol",
-};
