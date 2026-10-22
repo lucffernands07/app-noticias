@@ -1,11 +1,10 @@
 import type { Category, NewsResponse } from "@/types";
 
-// Lista de feeds RSS mapeados por categoria para busca direta no cliente
 const FEEDS_MAP: Record<string, { source: string; url: string }[]> = {
   geral: [
+    { source: "Google Trends", url: "https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR" },
     { source: "G1", url: "https://g1.globo.com/rss/g1/" },
     { source: "G1 Política", url: "https://g1.globo.com/rss/g1/politica/" },
-    { source: "G1 Economia", url: "https://g1.globo.com/rss/g1/economia/" },
   ],
   politica: [
     { source: "G1", url: "https://g1.globo.com/rss/g1/politica/" }
@@ -42,44 +41,50 @@ function stripHtml(input: string): string {
 
 export async function fetchNews(category: Category): Promise<NewsResponse> {
   try {
-    const feeds = FEEDS_MAP[category] || FEEDS_MAP["geral"];
+    let feeds = FEEDS_MAP[category] || FEEDS_MAP["geral"];
     let allItems: any[] = [];
 
     for (const feed of feeds) {
-      // Usamos um proxy CORS público para contornar o bloqueio do navegador ao ler RSS externo
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(feed.url)}`;
       const res = await fetch(proxyUrl);
-      
       if (!res.ok) continue;
-      
+
       const data = await res.json();
-      if (!data.contents) continue;
+      const xml = data.contents || "";
+      if (!xml) continue;
 
-      const parser = new window.DOMParser();
-      const xmlDoc = parser.parseFromString(data.contents, "text/xml");
-      const rssItems = xmlDoc.querySelectorAll("item");
+      const itemRegex = /<item\b[^>]*>([\s\S]*?)<\/item>/gi;
+      let match: RegExpExecArray | null;
 
-      rssItems.forEach((el, index) => {
-        if (index >= 15) return; // Limita a 15 por feed
-        const title = stripHtml(el.querySelector("title")?.textContent || "");
-        const link = stripHtml(el.querySelector("link")?.textContent || "");
-        const description = stripHtml(el.querySelector("description")?.textContent || "").slice(0, 280);
-        const pubDate = el.querySelector("pubDate")?.textContent || new Date().toISOString();
+      while ((match = itemRegex.exec(xml)) !== null) {
+        const block = match[1] || "";
+        const titleMatch = block.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+        const linkMatch = block.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i) || block.match(/<link\b[^>]*href="([^"]+)"/i);
+        const descMatch = block.match(/<description\b[^>]*>([\s\S]*?)<\/description>/i);
+        const dateMatch = block.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i);
+
+        const title = stripHtml(titleMatch ? titleMatch[1] : "");
+        const link = stripHtml(linkMatch ? (linkMatch[1] || linkMatch[2] || "") : "");
+        const summary = stripHtml(descMatch ? descMatch[1] : "").slice(0, 280);
+        const pubDate = dateMatch ? stripHtml(dateMatch[1]) : new Date().toISOString();
 
         if (title && link) {
           allItems.push({
             title,
             link,
-            summary: description || title,
+            summary: summary || title,
             source: feed.source,
             category,
             publishedAt: new Date(pubDate).toISOString(),
           });
         }
-      });
+      }
     }
 
-    // Remover duplicados por título
+    if (allItems.length === 0 && category !== "geral") {
+      return fetchNews("geral");
+    }
+
     const seen = new Set<string>();
     allItems = allItems.filter((it) => {
       const key = it.title.toLowerCase();
@@ -90,11 +95,11 @@ export async function fetchNews(category: Category): Promise<NewsResponse> {
 
     return { items: allItems, fetchedAt: new Date().toISOString() };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erro ao carregar notícias";
+    const message = err instanceof Error ? err.message : "Erro ao carregar tendências";
     return { items: [], error: message };
   }
 }
 
 export function googleSearchUrl(title: string): string {
   return `https://www.google.com/search?q=${encodeURIComponent(title)}&tbm=nws`;
-        }
+}
