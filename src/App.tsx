@@ -120,12 +120,13 @@ export function App() {
         </button>
       </header>
 
-      <nav className="flex gap-2 overflow-x-auto p-4 border-b border-gray-800/50 max-w-3xl w-full mx-auto scrollbar-none">
+      {/* Navegação por Abas otimizada para toque e rolagem lateral */}
+      <nav className="flex gap-2 overflow-x-auto py-3 px-4 border-b border-gray-800/50 max-w-3xl w-full mx-auto scrollbar-none touch-pan-x [-webkit-overflow-scrolling:touch]">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-full font-medium capitalize text-sm whitespace-nowrap transition-all ${
+            className={`px-4 py-2 rounded-full font-medium capitalize text-sm whitespace-nowrap transition-all flex-shrink-0 ${
               selectedCategory.toLowerCase() === cat.toLowerCase()
                 ? "bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/20"
                 : "bg-gray-900 text-gray-400 hover:text-white border border-gray-800"
