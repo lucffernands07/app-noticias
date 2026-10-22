@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Temas padrão que serão buscados automaticamente
-const DEFAULT_KEYWORDS = ["TI", "Microsoft", "Windows", "IA", "Cloud", "Corinthians", "Política"];
+// Tópicos dinâmicos que o utilizador configurou
+const DEFAULT_KEYWORDS = ["Corinthians", "Política", "Tecnologia", "IA"];
 
 function cleanText(input) {
   if (!input) return "";
@@ -72,7 +72,6 @@ async function main() {
     allItems.push(...items);
   }
 
-  // Deduplicação por título
   const seen = new Set();
   allItems = allItems.filter(it => {
     const key = it.title.toLowerCase();
@@ -81,7 +80,6 @@ async function main() {
     return true;
   });
 
-  // Ordenar pelas notícias mais recentes de todas
   allItems.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
 
   const output = {
@@ -94,7 +92,8 @@ async function main() {
   if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
 
   fs.writeFileSync(path.join(targetDir, 'news.json'), JSON.stringify(output, null, 2));
-  console.log(`Concluído! ${allItems.length} notícias recolhidas para as categorias dinâmicas.`);
+  console.log(`Sucesso! ${allItems.length} notícias guardadas.`);
 }
 
 main();
+    
