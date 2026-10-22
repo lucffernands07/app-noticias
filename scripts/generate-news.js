@@ -8,27 +8,36 @@ const __dirname = path.dirname(__filename);
 const FEEDS = [
   { url: "https://noticias.uol.com.br/index.xml", category: "geral", source: "UOL" },
   { url: "https://g1.globo.com/rss/g1/", category: "geral", source: "G1" },
-  { url: "https://feeds.folha.uol.com.br/poder/rss091.xml", category: "politica", source: "Folha" },
   { url: "https://g1.globo.com/rss/g1/politica/", category: "politica", source: "G1" },
-  { url: "https://tecnoblog.net/feed/", category: "tecnologia", source: "Tecnoblog" },
+  { url: "https://www.metropoles.com/feed", category: "politica", source: "Metrópoles" },
   { url: "https://g1.globo.com/rss/g1/tecnologia/", category: "tecnologia", source: "G1" },
-  { url: "https://www.infomoney.com.br/feed/", category: "economia", source: "Infomoney" },
+  { url: "https://tecnoblog.net/feed/", category: "tecnologia", source: "Tecnoblog" },
   { url: "https://g1.globo.com/rss/g1/economia/", category: "economia", source: "G1" },
+  { url: "https://www.infomoney.com.br/feed/", category: "economia", source: "Infomoney" },
   { url: "https://g1.globo.com/rss/g1/mundo/", category: "mundo", source: "G1" },
   { url: "https://g1.globo.com/rss/g1/ciencia-e-saude/", category: "saude", source: "G1" },
   { url: "https://ge.globo.com/rss/ge/futebol/", category: "futebol", source: "GE" }
 ];
 
-function stripHtml(input) {
+function cleanText(input) {
   if (!input) return "";
-  let out = input.replace(/<!\[CDATA\[\vert{}\]\]>/g, "");
+  let out = input.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1");
   out = out.replace(/<[^>]*>/g, " ");
-  out = out.replace(/&amp;/g, "&");
-  out = out.replace(/&lt;/g, "<");
-  out = out.replace(/&gt;/g, ">");
-  out = out.replace(/&quot;/g, '"');
-  out = out.replace(/&#39;/g, "'");
-  out = out.replace(/&nbsp;/g, " ");
+  out = out.replace(/&amp;/g, "&")
+             .replace(/&lt;/g, "<")
+             .replace(/&gt;/g, ">")
+             .replace(/&quot;/g, '"')
+             .replace(/&#39;/g, "'")
+             .replace(/&apos;/g, "'")
+             .replace(/&nbsp;/g, " ");
+  
+  // Corrige problemas comuns de codificação/acentos
+  try {
+    out = decodeURIComponent(escape(out));
+  } catch (e) {
+    // Mantém o texto limpo se falhar o decode
+  }
+
   return out.replace(/\s+/g, " ").trim();
 }
 
@@ -49,10 +58,10 @@ async function fetchRss(feed) {
       const descMatch = block.match(/<description\b[^>]*>([\s\S]*?)<\/description>/i);
       const dateMatch = block.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i);
 
-      const title = stripHtml(titleMatch ? titleMatch[1] : "");
-      const link = stripHtml(linkMatch ? (linkMatch[1] || linkMatch[2] || "") : "");
-      const summary = stripHtml(descMatch ? descMatch[1] : "").slice(0, 280);
-      const pubDate = dateMatch ? stripHtml(dateMatch[1]) : new Date().toISOString();
+      const title = cleanText(titleMatch ? titleMatch[1] : "");
+      const link = cleanText(linkMatch ? (linkMatch[1] || linkMatch[2] || "") : "");
+      const summary = cleanText(descMatch ? descMatch[1] : "").slice(0, 280);
+      const pubDate = dateMatch ? cleanText(dateMatch[1]) : new Date().toISOString();
 
       if (title && link) {
         items.push({
@@ -61,7 +70,7 @@ async function fetchRss(feed) {
           summary: summary || title,
           source: feed.source,
           category: feed.category,
-          publishedAt: new Date(pubDate).toISOString()
+          publishedAt: new Date(pubDate).isValid ? new Date(pubDate).toISOString() : new Date().toISOString()
         });
       }
     }
@@ -79,7 +88,7 @@ async function main() {
     allItems.push(...items);
   }
 
-  // Remover duplicados
+  // Remover duplicados por título
   const seen = new Set();
   allItems = allItems.filter(it => {
     const key = it.title.toLowerCase();
@@ -88,12 +97,12 @@ async function main() {
     return true;
   });
 
-  // Ordenar por mais recente
+  // Ordenar por data mais recente
   allItems.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
 
   const output = {
     fetchedAt: new Date().toISOString(),
-    items: allItems.slice(0, 60)
+    items: allItems
   };
 
   const targetDir = path.join(__dirname, '../public');
@@ -102,7 +111,8 @@ async function main() {
   }
 
   fs.writeFileSync(path.join(targetDir, 'news.json'), JSON.stringify(output, null, 2));
-  console.log(`Sucesso! ${allItems.length} notícias guardadas em public/news.json`);
+  console.log(`Sucesso! ${allItems.length} notícias limpas e guardadas em public/news.json`);
 }
 
 main();
+    
