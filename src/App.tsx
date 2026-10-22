@@ -110,10 +110,29 @@ function App() {
   // Explicit browser permission request triggered by the "Permitir notificações"
   // button in the settings modal.
   const handleRequestPermission = async () => {
+    if (!("Notification" in window)) {
+      alert("O seu navegador não suporta notificações.");
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      alert(
+        "As notificações foram bloqueadas nas definições do navegador.\n\nPara permitir: Toque no ícone de definições/cadeado na barra de endereços do Chrome e altere as permissões de Notificações para 'Permitir'."
+      );
+      return;
+    }
+
     setRequestingPerm(true);
     try {
       const result = await requestPermission();
       if (result !== "unsupported") setNotifPermission(result);
+      
+      if (result === "granted") {
+        togglePush(true);
+      } else {
+        togglePush(false);
+      }
+
       // Try to register periodic background sync once permission is granted.
       if (result === "granted" && "serviceWorker" in navigator) {
         try {
@@ -253,3 +272,4 @@ function EmptyState() {
 }
 
 export default App;
+      
