@@ -12,6 +12,7 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [topics, setTopics] = useState<string[]>([]);
   const [newTopic, setNewTopic] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [notificationTime, setNotificationTime] = useState<string>("08:00");
 
@@ -74,6 +75,10 @@ export function App() {
     setTopics(updated);
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
     setNewTopic("");
+
+    // Aviso amigável sobre a atualização automática em até 1 hora
+    setSuccessMessage("Tópico adicionado! As notícias serão atualizadas automaticamente na próxima hora.");
+    setTimeout(() => setSuccessMessage(null), 6000);
   };
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -188,7 +193,7 @@ export function App() {
           <div className="text-center py-12 text-red-400">{error}</div>
         ) : items.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
-            Nenhuma notícia encontrada para esta categoria. Adicione tópicos nas configurações.
+            Nenhuma notícia encontrada para esta categoria. Se acabou de a adicionar, aguarde a próxima atualização automática do sistema (cerca de 1 hora).
           </div>
         ) : (
           <div className="space-y-4">
@@ -229,6 +234,12 @@ export function App() {
             
             <h2 className="text-xl font-bold mb-1">Configurações</h2>
             <p className="text-xs text-gray-400 mb-6">Personalize os seus tópicos e alertas de notícias.</p>
+
+            {successMessage && (
+              <div className="mb-4 p-3 bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs rounded-xl leading-relaxed">
+                {successMessage}
+              </div>
+            )}
 
             <div className="mb-6 space-y-3">
               <label className="text-sm font-semibold text-cyan-400">Gerir Tópicos Manuais</label>
@@ -315,4 +326,4 @@ export function App() {
 }
 
 export default App;
-                
+    
