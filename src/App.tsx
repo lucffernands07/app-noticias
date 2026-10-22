@@ -19,6 +19,22 @@ export function App() {
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
+  // Sugestões predefinidas para o utilizador escolher rapidamente com um clique
+  const PRESET_SUGGESTIONS = [
+    "Tecnologia",
+    "Política",
+    "Economia",
+    "Brasil",
+    "Mundo",
+    "Inteligência Artificial",
+    "Futebol",
+    "Fórmula 1",
+    "Ciência",
+    "Astronomia",
+    "Cultura",
+    "Saúde"
+  ];
+
   useEffect(() => {
     const savedTopics = localStorage.getItem("user_custom_topics");
     if (savedTopics) {
@@ -27,11 +43,6 @@ export function App() {
       } catch (e) {
         setTopics([]);
       }
-    } else {
-      // Sugestão inicial de tópicos neutros caso seja o primeiro acesso
-      const defaultInitialTopics = ["Tecnologia", "Política", "Economia", "Futebol"];
-      setTopics(defaultInitialTopics);
-      localStorage.setItem("user_custom_topics", JSON.stringify(defaultInitialTopics));
     }
 
     const savedNotifs = localStorage.getItem("notifs_enabled");
@@ -74,19 +85,20 @@ export function App() {
     return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
   };
 
-  const handleAddTopic = () => {
-    if (!newTopic.trim()) return;
-    const formatted = capitalizeFirstLetter(newTopic);
+  const handleAddTopic = (topicToAdd?: string) => {
+    const target = topicToAdd || newTopic;
+    if (!target.trim()) return;
+    const formatted = capitalizeFirstLetter(target);
     
     if (topics.map(t => t.toLowerCase()).includes(formatted.toLowerCase())) return;
 
     const updated = [...topics, formatted];
     setTopics(updated);
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
-    setNewTopic("");
+    if (!topicToAdd) setNewTopic("");
 
     setSuccessMessage("Tópico adicionado com sucesso!");
-    setTimeout(() => setSuccessMessage(null), 4000);
+    setTimeout(() => setSuccessMessage(null), 3000);
   };
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -199,19 +211,8 @@ export function App() {
             <span className="text-3xl p-3 bg-cyan-500/10 text-cyan-400 rounded-2xl border border-cyan-500/20">⚙️</span>
             <h2 className="text-lg font-bold text-white">Nenhuma notícia encontrada</h2>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Para começar a acompanhar o conteúdo, clique no ícone de engrenagem <strong className="text-cyan-400 font-semibold">(⚙️)</strong> no topo para:
+              Para começar a acompanhar o conteúdo, clique no ícone de engrenagem <strong className="text-cyan-400 font-semibold">(⚙️)</strong> no topo para escolher os seus tópicos de interesse.
             </p>
-            <ul className="text-xs text-gray-300 text-left space-y-2 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80 w-full">
-              <li className="flex items-center gap-2">
-                <span className="text-cyan-400">🔹</span> Escolher os seus <strong>tópicos</strong> de interesse.
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-cyan-400">🔹</span> Ativar as <strong>notificações</strong>.
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-cyan-400">🔹</span> Programar o <strong>horário</strong> de recebimento.
-              </li>
-            </ul>
           </div>
         ) : (
           <div className="space-y-4">
@@ -261,41 +262,71 @@ export function App() {
 
             <div className="mb-6 space-y-3">
               <label className="text-sm font-semibold text-cyan-400">Gerir Tópicos Manuais</label>
-              <div className="flex gap-2">
+              
+              {/* Caixa de opções / Sugestões rápidas para escolha */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] text-gray-400">Escolha rápida de tópicos populares:</span>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 bg-gray-950/40 border border-gray-800 rounded-xl">
+                  {PRESET_SUGGESTIONS.map((suggestion) => {
+                    const isSelected = topics.map(t => t.toLowerCase()).includes(suggestion.toLowerCase());
+                    return (
+                      <button
+                        key={suggestion}
+                        onClick={() => !isSelected && handleAddTopic(suggestion)}
+                        disabled={isSelected}
+                        className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
+                          isSelected 
+                            ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400 opacity-60 cursor-not-allowed" 
+                            : "bg-gray-800 border-gray-700 text-gray-300 hover:border-cyan-500 hover:text-white"
+                        }`}
+                      >
+                        {isSelected ? `✓ ${suggestion}` : `+ ${suggestion}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Campo livre para digitar qualquer outro tópico */}
+              <div className="flex gap-2 pt-2">
                 <input
                   type="text"
                   value={newTopic}
                   onChange={(e) => setNewTopic(e.target.value)}
-                  placeholder="Ex: Tecnologia, Futebol, F1..."
+                  placeholder="Ou digite outro tópico personalizado..."
                   className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-xl border border-gray-700 text-sm outline-none focus:border-cyan-500"
                 />
                 <button
-                  onClick={handleAddTopic}
+                  onClick={() => handleAddTopic()}
                   className="bg-cyan-500 text-black font-bold px-4 py-2 rounded-xl text-sm hover:bg-cyan-400 transition-colors"
                 >
                   Adicionar
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-2">
-                {topics.length === 0 ? (
-                  <span className="text-xs text-gray-500">Nenhum tópico adicionado.</span>
-                ) : (
-                  topics.map((t, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-gray-800 text-gray-200 text-xs px-3 py-1.5 rounded-full border border-gray-700 flex items-center gap-2"
-                    >
-                      {t}
-                      <button
-                        onClick={() => handleRemoveTopic(t)}
-                        className="text-gray-400 hover:text-red-400 font-bold"
+              {/* Tópicos atualmente ativos do utilizador */}
+              <div className="pt-2">
+                <span className="text-[11px] text-gray-400 block mb-1.5">Os seus tópicos ativos:</span>
+                <div className="flex flex-wrap gap-2">
+                  {topics.length === 0 ? (
+                    <span className="text-xs text-gray-500">Nenhum tópico selecionado.</span>
+                  ) : (
+                    topics.map((t, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-gray-800 text-gray-200 text-xs px-3 py-1.5 rounded-full border border-gray-700 flex items-center gap-2"
                       >
-                        ✕
-                      </button>
-                    </span>
-                  ))
-                )}
+                        {t}
+                        <button
+                          onClick={() => handleRemoveTopic(t)}
+                          className="text-gray-400 hover:text-red-400 font-bold"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
@@ -344,4 +375,4 @@ export function App() {
 }
 
 export default App;
-          
+            
