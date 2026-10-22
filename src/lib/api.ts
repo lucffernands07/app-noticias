@@ -34,16 +34,20 @@ export async function fetchNews(selectedCategory: string = "geral", customTopics
     const res = await fetch("./news.json?" + new Date().getTime());
     let allItems: NewsItem[] = [];
     let availableCategories: string[] = [];
+    let fetchedAtTime = new Date().toISOString();
 
     if (res.ok) {
       const data = await res.json();
       allItems = data.items || [];
       availableCategories = data.categories || [];
+      if (data.fetchedAt) {
+        fetchedAtTime = data.fetchedAt;
+      }
     }
 
     if (selectedCategory.toLowerCase() === "geral") {
       if (customTopics.length === 0) {
-        return { items: [], categories: availableCategories, fetchedAt: data.fetchedAt };
+        return { items: [], categories: availableCategories, fetchedAt: fetchedAtTime };
       }
 
       const normalizedTopics = customTopics.map(t => t.toLowerCase());
@@ -51,10 +55,13 @@ export async function fetchNews(selectedCategory: string = "geral", customTopics
         normalizedTopics.includes(item.category.toLowerCase())
       );
 
+      // Ordenar da mais recente para a mais antiga
+      filteredGeneral.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
       return {
         items: filteredGeneral,
         categories: availableCategories,
-        fetchedAt: data.fetchedAt || new Date().toISOString()
+        fetchedAt: fetchedAtTime
       };
     }
 
@@ -100,10 +107,12 @@ export async function fetchNews(selectedCategory: string = "geral", customTopics
       }
     }
 
+    filtered.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
     return {
       items: filtered,
       categories: availableCategories,
-      fetchedAt: new Date().toISOString()
+      fetchedAt: fetchedAtTime
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro ao carregar notícias";
