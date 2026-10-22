@@ -48,7 +48,7 @@ async function fetchRss(feed) {
       const title = stripHtml(titleMatch ? titleMatch[1] : "");
       const link = stripHtml(linkMatch ? (linkMatch[1] || linkMatch[2] || "") : "");
       const summary = stripHtml(descMatch ? descMatch[1] : "").slice(0, 280);
-      const pubDate = dateMatch ? stripHtml(dateMatch[1] : new Date().toISOString());
+      const pubDate = dateMatch ? stripHtml(dateMatch[1]) : new Date().toISOString();
 
       if (title && link) {
         items.push({
