@@ -19,7 +19,6 @@ export function App() {
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
-  // Lista de tópicos predefinidos para a caixa de seleção
   const PRESET_OPTIONS = [
     "Tecnologia",
     "Política",
@@ -53,10 +52,10 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const activeTopics = ["geral", ...topics.map(t => t.toLowerCase())];
+    const activeTopics = ["geral", ...topics];
     setCategories(activeTopics);
 
-    if (!activeTopics.includes(selectedCategory.toLowerCase())) {
+    if (!activeTopics.map(t => t.toLowerCase()).includes(selectedCategory.toLowerCase())) {
       setSelectedCategory("geral");
     }
   }, [topics]);
@@ -122,6 +121,22 @@ export function App() {
     return text.replace(/<[^>]*>?/gm, "").trim();
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "";
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    } catch (e) {
+      return "";
+    }
+  };
+
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
@@ -137,13 +152,18 @@ export function App() {
     const minSwipeDistance = 75;
 
     if (Math.abs(distance) > minSwipeDistance) {
-      const currentIndex = categories.indexOf(selectedCategory.toLowerCase());
-      if (distance > 0) {
-        const nextIndex = (currentIndex + 1) % categories.length;
-        setSelectedCategory(categories[nextIndex]);
-      } else {
-        const prevIndex = (currentIndex - 1 + categories.length) % categories.length;
-        setSelectedCategory(categories[prevIndex]);
+      const currentIndex = categories.findIndex(
+        cat => cat.toLowerCase() === selectedCategory.toLowerCase()
+      );
+      
+      if (currentIndex !== -1) {
+        if (distance > 0) {
+          const nextIndex = (currentIndex + 1) % categories.length;
+          setSelectedCategory(categories[nextIndex]);
+        } else {
+          const prevIndex = (currentIndex - 1 + categories.length) % categories.length;
+          setSelectedCategory(categories[prevIndex]);
+        }
       }
     }
 
@@ -211,9 +231,14 @@ export function App() {
             <p className="text-xs text-gray-400 font-medium">{items.length} notícias encontradas</p>
             {items.map((item, index) => (
               <div key={index} className="p-4 bg-gray-900/80 rounded-2xl border border-gray-800/80 hover:border-gray-700 transition-colors">
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/45">
-                  {item.category}
-                </span>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/45">
+                    {item.category}
+                  </span>
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    {formatDate(item.publishedAt)}
+                  </span>
+                </div>
                 <h2 className="text-base font-bold mt-2 leading-snug">{item.title}</h2>
                 <p className="text-xs text-gray-400 mt-2 line-clamp-3 leading-relaxed">{cleanSummary(item.summary)}</p>
                 <div className="mt-4 pt-3 border-t border-gray-800/50 flex justify-between items-center">
@@ -255,7 +280,6 @@ export function App() {
             <div className="mb-6 space-y-4">
               <label className="text-sm font-semibold text-cyan-400">Gerir Tópicos</label>
               
-              {/* Caixa de seleção (Dropdown) limpa com os tópicos predefinidos */}
               <div className="space-y-1.5">
                 <span className="text-[11px] text-gray-400">Escolha um tópico para adicionar:</span>
                 <div className="flex gap-2">
@@ -283,7 +307,6 @@ export function App() {
                 </div>
               </div>
 
-              {/* Tópicos atualmente ativos */}
               <div className="pt-2">
                 <span className="text-[11px] text-gray-400 block mb-1.5">Os seus tópicos ativos:</span>
                 <div className="flex flex-wrap gap-2">
@@ -354,3 +377,4 @@ export function App() {
 }
 
 export default App;
+                      
