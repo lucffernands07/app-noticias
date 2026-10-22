@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Lista padrão inicial de palavras-chave configuradas pelo utilizador
-const DEFAULT_KEYWORDS = ["TI", "Microsoft", "Windows", "IA", "Cloud", "Corinthians", "política"];
+// Temas padrão que serão buscados automaticamente
+const DEFAULT_KEYWORDS = ["TI", "Microsoft", "Windows", "IA", "Cloud", "Corinthians", "Política"];
 
 function cleanText(input) {
   if (!input) return "";
@@ -67,18 +67,7 @@ async function fetchGoogleNewsFeed(keyword) {
 async function main() {
   let allItems = [];
 
-  // Lê palavras-chave dinâmicas se existirem
-  let keywords = DEFAULT_KEYWORDS;
-  const configPath = path.join(__dirname, '../public/categories.json');
-  if (fs.existsSync(configPath)) {
-    try {
-      const raw = fs.readFileSync(configPath, 'utf8');
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) keywords = parsed;
-    } catch(e) {}
-  }
-
-  for (const kw of keywords) {
+  for (const kw of DEFAULT_KEYWORDS) {
     const items = await fetchGoogleNewsFeed(kw);
     allItems.push(...items);
   }
@@ -97,7 +86,7 @@ async function main() {
 
   const output = {
     fetchedAt: new Date().toISOString(),
-    categories: keywords,
+    categories: DEFAULT_KEYWORDS,
     items: allItems
   };
 
@@ -105,7 +94,7 @@ async function main() {
   if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
 
   fs.writeFileSync(path.join(targetDir, 'news.json'), JSON.stringify(output, null, 2));
-  console.log(`Concluído! ${allItems.length} notícias recolhidas para ${keywords.length} categorias dinâmicas.`);
+  console.log(`Concluído! ${allItems.length} notícias recolhidas para as categorias dinâmicas.`);
 }
 
 main();
