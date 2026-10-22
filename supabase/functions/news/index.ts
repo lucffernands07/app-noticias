@@ -45,7 +45,7 @@ const FEEDS: FeedDef[] = [
 
 function stripHtml(input: string): string {
   // Remove HTML tags and decode common entities, then collapse whitespace.
-  let out = input.replace(/<!\[CDATA\[|\]\]>/g, "");
+  let out = input.replace(/<!\[CDATA\[\vert{}\]\]>/g, "");
   out = out.replace(/<[^>]*>/g, " ");
   out = out.replace(/&amp;/g, "&");
   out = out.replace(/&lt;/g, "<");
@@ -58,9 +58,9 @@ function stripHtml(input: string): string {
 }
 
 function parseDate(input: string | null): string | null {
-  if (!input) return null;
+  if (!input) return new Date().toISOString(); // Fallback para data atual se faltar no RSS
   const d = new Date(input);
-  if (isNaN(d.getTime())) return null;
+  if (isNaN(d.getTime())) return new Date().toISOString();
   return d.toISOString();
 }
 
@@ -106,7 +106,7 @@ function parseFeed(xml: string, feed: FeedDef): FeedItem[] {
     items.push({
       title,
       link,
-      summary,
+      summary: summary || title,
       source: feed.source,
       category: feed.category,
       publishedAt: parseDate(dateMatch ? stripHtml(dateMatch[1]) : null),
@@ -152,7 +152,6 @@ Deno.serve(async (req: Request) => {
 
     let feeds: FeedDef[];
     if (category === "geral") {
-      // "Geral" aggregates a broad set: top stories from several portals.
       feeds = FEEDS.filter((f) =>
         ["geral", "politica", "economia", "mundo"].includes(f.category)
       );
@@ -161,14 +160,18 @@ Deno.serve(async (req: Request) => {
     }
 
     if (feeds.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Categoria desconhecida.", items: [] }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      feeds = FEEDS.filter((f) => f.category === "geral");
     }
 
-    const results = await Promise.all(feeds.map(fetchFeed));
+    let results = await Promise.all(feeds.map(fetchFeed));
     let items = results.flat();
+
+    // Se a categoria específica veio vazia, faz fallback automático para o feed geral
+    if (items.length === 0 && category !== "geral") {
+      const fallbackFeeds = FEEDS.filter((f) => f.category === "geral");
+      const fallbackResults = await Promise.all(fallbackFeeds.map(fetchFeed));
+      items = fallbackResults.flat();
+    }
 
     // Deduplicate by title (case-insensitive).
     const seen = new Set<string>();
@@ -179,7 +182,7 @@ Deno.serve(async (req: Request) => {
       return true;
     });
 
-    // Sort by published date descending; undated items go last.
+    // Sort by published date descending
     items.sort((a, b) => {
       const ta = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
       const tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
@@ -200,3 +203,4 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+      
