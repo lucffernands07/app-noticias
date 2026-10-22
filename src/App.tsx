@@ -11,7 +11,7 @@ export function App() {
   
   // Estados do Modal de Configurações
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [topics, setTopics] = useState<string[]>(["TI", "Microsoft", "Windows", "IA", "Cloud", "Corinthians", "Política"]);
+  const [topics, setTopics] = useState<string[]>([]);
   const [newTopic, setNewTopic] = useState<string>("");
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [notificationTime, setNotificationTime] = useState<string>("08:00");
