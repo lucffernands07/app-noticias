@@ -12,7 +12,6 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [topics, setTopics] = useState<string[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>("");
-  const [newTopic, setNewTopic] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [notificationTime, setNotificationTime] = useState<string>("08:00");
@@ -80,28 +79,15 @@ export function App() {
     loadData();
   }, [selectedCategory, topics]);
 
-  const capitalizeFirstLetter = (str: string) => {
-    if (!str) return "";
-    const trimmed = str.trim();
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
-  };
-
-  const handleAddTopic = (topicToAdd?: string) => {
-    const target = topicToAdd || newTopic;
-    if (!target.trim()) return;
-    const formatted = capitalizeFirstLetter(target);
+  const handleAddTopic = () => {
+    if (!selectedPreset) return;
     
-    if (topics.map(t => t.toLowerCase()).includes(formatted.toLowerCase())) return;
+    if (topics.map(t => t.toLowerCase()).includes(selectedPreset.toLowerCase())) return;
 
-    const updated = [...topics, formatted];
+    const updated = [...topics, selectedPreset];
     setTopics(updated);
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
-    
-    if (topicToAdd) {
-      setSelectedPreset("");
-    } else {
-      setNewTopic("");
-    }
+    setSelectedPreset("");
 
     setSuccessMessage("Tópico adicionado com sucesso!");
     setTimeout(() => setSuccessMessage(null), 3000);
@@ -269,16 +255,16 @@ export function App() {
             <div className="mb-6 space-y-4">
               <label className="text-sm font-semibold text-cyan-400">Gerir Tópicos</label>
               
-              {/* Caixa de seleção (Dropdown) com os tópicos predefinidos */}
+              {/* Caixa de seleção (Dropdown) limpa com os tópicos predefinidos */}
               <div className="space-y-1.5">
-                <span className="text-[11px] text-gray-400">Selecionar a partir de tópicos populares:</span>
+                <span className="text-[11px] text-gray-400">Escolha um tópico para adicionar:</span>
                 <div className="flex gap-2">
                   <select
                     value={selectedPreset}
                     onChange={(e) => setSelectedPreset(e.target.value)}
                     className="flex-1 bg-gray-800 text-white px-3 py-2.5 rounded-xl border border-gray-700 text-sm outline-none focus:border-cyan-500"
                   >
-                    <option value="">-- Escolher um tópico --</option>
+                    <option value="">-- Selecionar tópico --</option>
                     {PRESET_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>
                         {opt}
@@ -286,33 +272,13 @@ export function App() {
                     ))}
                   </select>
                   <button
-                    onClick={() => selectedPreset && handleAddTopic(selectedPreset)}
+                    onClick={handleAddTopic}
                     disabled={!selectedPreset}
                     className={`font-bold px-4 py-2 rounded-xl text-sm transition-colors ${
                       selectedPreset ? "bg-cyan-500 text-black hover:bg-cyan-400" : "bg-gray-800 text-gray-500 cursor-not-allowed"
                     }`}
                   >
                     Adicionar
-                  </button>
-                </div>
-              </div>
-
-              {/* Campo alternativo opcional para digitar se quiser */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] text-gray-400">Ou digite outro tópico personalizado:</span>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newTopic}
-                    onChange={(e) => setNewTopic(e.target.value)}
-                    placeholder="Ex: Criptomoedas, Cinema..."
-                    className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-xl border border-gray-700 text-sm outline-none focus:border-cyan-500"
-                  />
-                  <button
-                    onClick={() => handleAddTopic()}
-                    className="bg-gray-800 text-cyan-400 border border-gray-700 font-bold px-4 py-2 rounded-xl text-sm hover:bg-gray-700 transition-colors"
-                  >
-                    Digitar
                   </button>
                 </div>
               </div>
@@ -388,4 +354,3 @@ export function App() {
 }
 
 export default App;
-                                         
