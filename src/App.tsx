@@ -27,6 +27,11 @@ export function App() {
       } catch (e) {
         setTopics([]);
       }
+    } else {
+      // Sugestão inicial de tópicos neutros caso seja o primeiro acesso
+      const defaultInitialTopics = ["Tecnologia", "Política", "Economia", "Futebol"];
+      setTopics(defaultInitialTopics);
+      localStorage.setItem("user_custom_topics", JSON.stringify(defaultInitialTopics));
     }
 
     const savedNotifs = localStorage.getItem("notifs_enabled");
@@ -50,7 +55,6 @@ export function App() {
       setLoading(true);
       setError(null);
 
-      // Passa os tópicos do utilizador para que a aba Geral filtre rigorosamente com base neles
       const response = await fetchNews(selectedCategory, topics);
 
       if (response.error) {
@@ -64,7 +68,6 @@ export function App() {
     loadData();
   }, [selectedCategory, topics]);
 
-  // Função para colocar a primeira letra em maiúsculo automaticamente
   const capitalizeFirstLetter = (str: string) => {
     if (!str) return "";
     const trimmed = str.trim();
@@ -82,8 +85,8 @@ export function App() {
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
     setNewTopic("");
 
-    setSuccessMessage("Tópico adicionado! As notícias serão atualizadas automaticamente na próxima hora.");
-    setTimeout(() => setSuccessMessage(null), 6000);
+    setSuccessMessage("Tópico adicionado com sucesso!");
+    setTimeout(() => setSuccessMessage(null), 4000);
   };
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -209,9 +212,6 @@ export function App() {
                 <span className="text-cyan-400">🔹</span> Programar o <strong>horário</strong> de recebimento.
               </li>
             </ul>
-            <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
-              Assim que o sistema atualizar automaticamente no próximo horário, as notícias dos seus tópicos começarão a refletir aqui!
-            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -266,7 +266,7 @@ export function App() {
                   type="text"
                   value={newTopic}
                   onChange={(e) => setNewTopic(e.target.value)}
-                  placeholder="Ex: TI, Windows, Corinthians..."
+                  placeholder="Ex: Tecnologia, Futebol, F1..."
                   className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-xl border border-gray-700 text-sm outline-none focus:border-cyan-500"
                 />
                 <button
@@ -344,4 +344,4 @@ export function App() {
 }
 
 export default App;
-      
+          
