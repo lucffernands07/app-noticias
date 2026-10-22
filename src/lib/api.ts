@@ -41,7 +41,6 @@ export async function fetchNews(selectedCategory: string = "geral", customTopics
       availableCategories = data.categories || [];
     }
 
-    // Se for 'geral', filtra unicamente com base nos tópicos ativos definidos pelo utilizador
     if (selectedCategory.toLowerCase() === "geral") {
       if (customTopics.length === 0) {
         return { items: [], categories: availableCategories, fetchedAt: data.fetchedAt };
@@ -59,12 +58,12 @@ export async function fetchNews(selectedCategory: string = "geral", customTopics
       };
     }
 
-    // Tenta filtrar do ficheiro estático primeiro
+    // Tenta filtrar do JSON estático
     let filtered = allItems.filter(
       (item) => item.category.toLowerCase() === selectedCategory.toLowerCase()
     );
 
-    // Se o tópico não estiver no JSON estático, busca em tempo real (fallback)
+    // Se não existir no JSON estático, busca imediatamente em tempo real via Google RSS
     if (filtered.length === 0) {
       try {
         const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(selectedCategory)}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
@@ -114,4 +113,4 @@ export async function fetchNews(selectedCategory: string = "geral", customTopics
 
 export function googleSearchUrl(title: string): string {
   return `https://www.google.com/search?q=${encodeURIComponent(title)}&tbm=nws`;
-        }
+}
