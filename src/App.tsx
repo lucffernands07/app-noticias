@@ -9,20 +9,23 @@ export function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Estados do Modal de Configurações
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  // Começa limpo, e se houver no localStorage carrega, senão usa o array vazio
   const [topics, setTopics] = useState<string[]>([]);
   const [newTopic, setNewTopic] = useState<string>("");
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [notificationTime, setNotificationTime] = useState<string>("08:00");
 
-  // Carregar definições salvas no localStorage
   useEffect(() => {
     const savedTopics = localStorage.getItem("user_custom_topics");
     if (savedTopics) {
       try {
         setTopics(JSON.parse(savedTopics));
-      } catch (e) {}
+      } catch (e) {
+        setTopics(["Corinthians"]);
+      }
+    } else {
+      setTopics(["Corinthians"]);
     }
 
     const savedNotifs = localStorage.getItem("notifs_enabled");
@@ -74,12 +77,24 @@ export function App() {
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
   };
 
-  const handleToggleNotifications = () => {
+  const handleToggleNotifications = async () => {
     const nextState = !notificationsEnabled;
-    setNotificationsEnabled(nextState);
-    localStorage.setItem("notifs_enabled", JSON.stringify(nextState));
+    
     if (nextState && "Notification" in window) {
-      Notification.requestPermission();
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        setNotificationsEnabled(true);
+        localStorage.setItem("notifs_enabled", "true");
+        new Notification("Notícias Hoje", { body: "Notificações ativadas com sucesso!" });
+      } else {
+        alert("Permissão de notificação negada pelo navegador.");
+        setNotificationsEnabled(false);
+        localStorage.setItem("notifs_enabled", "false");
+        return;
+      }
+    } else {
+      setNotificationsEnabled(nextState);
+      localStorage.setItem("notifs_enabled", JSON.stringify(nextState));
     }
   };
 
@@ -91,7 +106,6 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      {/* Header */}
       <header className="p-4 border-b border-gray-800 flex justify-between items-center max-w-3xl w-full mx-auto">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
@@ -108,7 +122,6 @@ export function App() {
         </button>
       </header>
 
-      {/* Navegação por Abas Dinâmicas */}
       <nav className="flex gap-2 overflow-x-auto p-4 border-b border-gray-800/50 max-w-3xl w-full mx-auto scrollbar-none">
         {categories.map((cat) => (
           <button
@@ -125,7 +138,6 @@ export function App() {
         ))}
       </nav>
 
-      {/* Conteúdo das Notícias */}
       <main className="p-4 max-w-3xl w-full mx-auto flex-1">
         {loading ? (
           <div className="text-center py-16 text-gray-400 animate-pulse flex flex-col items-center gap-2">
@@ -165,7 +177,6 @@ export function App() {
         )}
       </main>
 
-      {/* Modal de Configurações Completo */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-gray-900 border border-gray-800 w-full max-w-md rounded-2xl p-6 relative text-white max-h-[90vh] overflow-y-auto">
@@ -179,7 +190,6 @@ export function App() {
             <h2 className="text-xl font-bold mb-1">Configurações</h2>
             <p className="text-xs text-gray-400 mb-6">Personalize os seus tópicos e alertas de notícias.</p>
 
-            {/* Secção de Gestão Manual de Tópicos */}
             <div className="mb-6 space-y-3">
               <label className="text-sm font-semibold text-cyan-400">Gerir Tópicos Manuais</label>
               <div className="flex gap-2">
@@ -218,7 +228,6 @@ export function App() {
 
             <hr className="border-gray-800 my-4" />
 
-            {/* Secção de Notificações e Alertas */}
             <div className="space-y-4">
               <label className="text-sm font-semibold text-cyan-400">Notificações</label>
               
@@ -259,4 +268,3 @@ export function App() {
 }
 
 export default App;
-          
