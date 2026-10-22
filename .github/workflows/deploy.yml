@@ -37,6 +37,9 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Gerar Notícias Atualizadas
+        run: node scripts/generate-news.js
+
       - name: Build do Projeto (PWA)
         run: npm run build
 
@@ -51,3 +54,4 @@ jobs:
       - name: Deploy para GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        
