@@ -16,7 +16,6 @@ export function App() {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [notificationTime, setNotificationTime] = useState<string>("08:00");
 
-  // Referências para detetar o gesto de deslizar (swipe horizontal)
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
@@ -37,12 +36,10 @@ export function App() {
     if (savedTime) setNotificationTime(savedTime);
   }, []);
 
-  // Atualiza as abas com base nos tópicos salvos e no "geral"
   useEffect(() => {
     const activeTopics = ["geral", ...topics.map(t => t.toLowerCase())];
     setCategories(activeTopics);
 
-    // Se o utilizador remover o tópico que estava selecionado, volta para "geral"
     if (!activeTopics.includes(selectedCategory.toLowerCase())) {
       setSelectedCategory("geral");
     }
@@ -66,9 +63,17 @@ export function App() {
     loadData();
   }, [selectedCategory]);
 
+  // Função para colocar a primeira letra em maiúsculo automaticamente
+  const capitalizeFirstLetter = (str: string) => {
+    if (!str) return "";
+    const trimmed = str.trim();
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+  };
+
   const handleAddTopic = () => {
     if (!newTopic.trim()) return;
-    const formatted = newTopic.trim();
+    const formatted = capitalizeFirstLetter(newTopic);
+    
     if (topics.map(t => t.toLowerCase()).includes(formatted.toLowerCase())) return;
 
     const updated = [...topics, formatted];
@@ -76,7 +81,6 @@ export function App() {
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
     setNewTopic("");
 
-    // Aviso amigável sobre a atualização automática em até 1 hora
     setSuccessMessage("Tópico adicionado! As notícias serão atualizadas automaticamente na próxima hora.");
     setTimeout(() => setSuccessMessage(null), 6000);
   };
@@ -105,13 +109,11 @@ export function App() {
     }
   };
 
-  // Função auxiliar para limpar tags HTML residuais do resumo no frontend caso existam
   const cleanSummary = (text: string) => {
     if (!text) return "";
     return text.replace(/<[^>]*>?/gm, "").trim();
   };
 
-  // Funções de controlo de gestos táteis (Swipe horizontal)
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
@@ -124,16 +126,14 @@ export function App() {
     if (!touchStartX.current || !touchEndX.current) return;
     
     const distance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 75; // Distância mínima em pixéis para considerar o gesto válido
+    const minSwipeDistance = 75;
 
     if (Math.abs(distance) > minSwipeDistance) {
       const currentIndex = categories.indexOf(selectedCategory.toLowerCase());
       if (distance > 0) {
-        // Deslizou para a esquerda (próxima categoria)
         const nextIndex = (currentIndex + 1) % categories.length;
         setSelectedCategory(categories[nextIndex]);
       } else {
-        // Deslizou para a direita (categoria anterior)
         const prevIndex = (currentIndex - 1 + categories.length) % categories.length;
         setSelectedCategory(categories[prevIndex]);
       }
@@ -166,7 +166,6 @@ export function App() {
         </button>
       </header>
 
-      {/* Navegação por Abas otimizada para toque e rolagem lateral */}
       <nav className="flex gap-2 overflow-x-auto py-3 px-4 border-b border-gray-800/50 max-w-3xl w-full mx-auto scrollbar-none touch-pan-x [-webkit-overflow-scrolling:touch]">
         {categories.map((cat) => (
           <button
@@ -200,7 +199,7 @@ export function App() {
             <p className="text-xs text-gray-400 font-medium">{items.length} notícias encontradas</p>
             {items.map((item, index) => (
               <div key={index} className="p-4 bg-gray-900/80 rounded-2xl border border-gray-800/80 hover:border-gray-700 transition-colors">
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/40">
+                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/45">
                   {item.category}
                 </span>
                 <h2 className="text-base font-bold mt-2 leading-snug">{item.title}</h2>
@@ -326,4 +325,4 @@ export function App() {
 }
 
 export default App;
-    
+      
