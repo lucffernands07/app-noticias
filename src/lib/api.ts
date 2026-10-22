@@ -51,11 +51,18 @@ export async function fetchNews(selectedCategory: string = "geral", customTopics
       }
 
       const normalizedTopics = customTopics.map(t => t.toLowerCase());
-      const filteredGeneral = allItems.filter(item => 
-        normalizedTopics.includes(item.category.toLowerCase())
-      );
+      let filteredGeneral: NewsItem[] = [];
 
-      // Ordenar da mais recente para a mais antiga
+      // Pega estritamente APENAS A 1 NOTÍCIA MAIS RECENTE de cada tópico ativo
+      normalizedTopics.forEach(topic => {
+        const topicItems = allItems.filter(item => item.category.toLowerCase() === topic);
+        if (topicItems.length > 0) {
+          topicItems.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+          filteredGeneral.push(topicItems[0]); // Apenas o topo (mais recente) deste tema
+        }
+      });
+
+      // Ordena o painel geral da mais recente para a mais antiga entre os diferentes tópicos
       filteredGeneral.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
       return {
