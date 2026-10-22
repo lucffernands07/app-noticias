@@ -1,28 +1,53 @@
-import type { Category, NewsResponse } from "@/types";
+export interface NewsItem {
+  title: string;
+  link: string;
+  summary: string;
+  source: string;
+  category: string;
+  publishedAt: string;
+}
 
-export async function fetchNews(category: Category): Promise<NewsResponse> {
+export interface NewsResponse {
+  items: NewsItem[];
+  categories?: string[];
+  fetchedAt?: string;
+  error?: string;
+}
+
+export async function fetchNews(selectedCategory: string = "geral"): Promise<NewsResponse> {
   try {
     const res = await fetch("./news.json?" + new Date().getTime());
-    if (!res.ok) throw new Error("Não foi possível carregar as notícias.");
+    if (!res.ok) throw new Error("Não foi possível carregar o arquivo de notícias.");
 
     const data = await res.json();
-    const allItems: any[] = data.items || [];
+    const allItems: NewsItem[] = data.items || [];
+    const availableCategories: string[] = data.categories || [];
 
-    // Se for 'geral', retorna tudo. Caso contrário, filtra estritamente pela categoria exata.
-    const filteredItems = category === "geral"
-      ? allItems
-      : allItems.filter((item: any) => item.category === category);
+    // Se for 'geral', entrega as notícias mais recentes de TODAS as categorias dinâmicas
+    if (selectedCategory.toLowerCase() === "geral") {
+      return {
+        items: allItems,
+        categories: availableCategories,
+        fetchedAt: data.fetchedAt || new Date().toISOString()
+      };
+    }
+
+    // Filtra apenas as notícias pertencentes à palavra-chave/categoria selecionada
+    const filtered = allItems.filter(
+      (item) => item.category.toLowerCase() === selectedCategory.toLowerCase()
+    );
 
     return {
-      items: filteredItems,
+      items: filtered,
+      categories: availableCategories,
       fetchedAt: data.fetchedAt || new Date().toISOString()
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro ao carregar notícias";
-    return { items: [], error: message };
+    return { items: [], categories: [], error: message };
   }
 }
 
 export function googleSearchUrl(title: string): string {
   return `https://www.google.com/search?q=${encodeURIComponent(title)}&tbm=nws`;
-}
+  }
