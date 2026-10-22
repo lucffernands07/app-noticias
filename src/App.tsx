@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { fetchNews } from "./lib/api";
 import type { NewsItem } from "./types";
 
@@ -14,6 +14,10 @@ export function App() {
   const [newTopic, setNewTopic] = useState<string>("");
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [notificationTime, setNotificationTime] = useState<string>("08:00");
+
+  // Referências para detetar o gesto de deslizar (swipe horizontal)
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
   useEffect(() => {
     const savedTopics = localStorage.getItem("user_custom_topics");
@@ -102,8 +106,45 @@ export function App() {
     return text.replace(/<[^>]*>?/gm, "").trim();
   };
 
+  // Funções de controlo de gestos táteis (Swipe horizontal)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 75; // Distância mínima em pixéis para considerar o gesto válido
+
+    if (Math.abs(distance) > minSwipeDistance) {
+      const currentIndex = categories.indexOf(selectedCategory.toLowerCase());
+      if (distance > 0) {
+        // Deslizou para a esquerda (próxima categoria)
+        const nextIndex = (currentIndex + 1) % categories.length;
+        setSelectedCategory(categories[nextIndex]);
+      } else {
+        // Deslizou para a direita (categoria anterior)
+        const prevIndex = (currentIndex - 1 + categories.length) % categories.length;
+        setSelectedCategory(categories[prevIndex]);
+      }
+    }
+
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div 
+      className="min-h-screen bg-gray-950 text-white flex flex-col"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <header className="p-4 border-b border-gray-800 flex justify-between items-center max-w-3xl w-full mx-auto">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
@@ -274,3 +315,4 @@ export function App() {
 }
 
 export default App;
+                
