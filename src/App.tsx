@@ -50,7 +50,8 @@ export function App() {
       setLoading(true);
       setError(null);
 
-      const response = await fetchNews(selectedCategory);
+      // Passa os tópicos do utilizador para que a aba Geral filtre rigorosamente com base neles
+      const response = await fetchNews(selectedCategory, topics);
 
       if (response.error) {
         setError(response.error);
@@ -61,7 +62,7 @@ export function App() {
     }
 
     loadData();
-  }, [selectedCategory]);
+  }, [selectedCategory, topics]);
 
   // Função para colocar a primeira letra em maiúsculo automaticamente
   const capitalizeFirstLetter = (str: string) => {
@@ -191,8 +192,26 @@ export function App() {
         ) : error ? (
           <div className="text-center py-12 text-red-400">{error}</div>
         ) : items.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            Nenhuma notícia encontrada para esta categoria. Se acabou de a adicionar, aguarde a próxima atualização automática do sistema (cerca de 1 hora).
+          <div className="text-center py-12 px-6 bg-gray-900/40 border border-gray-800 rounded-2xl max-w-lg mx-auto mt-8 shadow-xl flex flex-col items-center gap-4">
+            <span className="text-3xl p-3 bg-cyan-500/10 text-cyan-400 rounded-2xl border border-cyan-500/20">⚙️</span>
+            <h2 className="text-lg font-bold text-white">Nenhuma notícia encontrada</h2>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Para começar a acompanhar o conteúdo, clique no ícone de engrenagem <strong className="text-cyan-400 font-semibold">(⚙️)</strong> no topo para:
+            </p>
+            <ul className="text-xs text-gray-300 text-left space-y-2 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80 w-full">
+              <li className="flex items-center gap-2">
+                <span className="text-cyan-400">🔹</span> Escolher os seus <strong>tópicos</strong> de interesse.
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-cyan-400">🔹</span> Ativar as <strong>notificações</strong>.
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-cyan-400">🔹</span> Programar o <strong>horário</strong> de recebimento.
+              </li>
+            </ul>
+            <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              Assim que o sistema atualizar automaticamente no próximo horário, as notícias dos seus tópicos começarão a refletir aqui!
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
