@@ -10,7 +10,6 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  // Começa limpo, e se houver no localStorage carrega, senão usa o array vazio
   const [topics, setTopics] = useState<string[]>([]);
   const [newTopic, setNewTopic] = useState<string>("");
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
@@ -22,10 +21,8 @@ export function App() {
       try {
         setTopics(JSON.parse(savedTopics));
       } catch (e) {
-        setTopics(["Corinthians"]);
+        setTopics([]);
       }
-    } else {
-      setTopics(["Corinthians"]);
     }
 
     const savedNotifs = localStorage.getItem("notifs_enabled");
@@ -34,6 +31,17 @@ export function App() {
     const savedTime = localStorage.getItem("notifs_time");
     if (savedTime) setNotificationTime(savedTime);
   }, []);
+
+  // Atualiza as abas com base nos tópicos salvos e no "geral"
+  useEffect(() => {
+    const activeTopics = ["geral", ...topics.map(t => t.toLowerCase())];
+    setCategories(activeTopics);
+
+    // Se o utilizador remover o tópico que estava selecionado, volta para "geral"
+    if (!activeTopics.includes(selectedCategory.toLowerCase())) {
+      setSelectedCategory("geral");
+    }
+  }, [topics]);
 
   useEffect(() => {
     async function loadData() {
@@ -46,13 +54,6 @@ export function App() {
         setError(response.error);
       } else {
         setItems(response.items);
-        
-        if (response.categories && response.categories.length > 0) {
-          const uniqueCategories = Array.from(
-            new Set(["geral", ...response.categories.map((c) => c.toLowerCase())])
-          );
-          setCategories(uniqueCategories);
-        }
       }
       setLoading(false);
     }
@@ -63,7 +64,7 @@ export function App() {
   const handleAddTopic = () => {
     if (!newTopic.trim()) return;
     const formatted = newTopic.trim();
-    if (topics.includes(formatted)) return;
+    if (topics.map(t => t.toLowerCase()).includes(formatted.toLowerCase())) return;
 
     const updated = [...topics, formatted];
     setTopics(updated);
@@ -79,15 +80,12 @@ export function App() {
 
   const handleToggleNotifications = async () => {
     const nextState = !notificationsEnabled;
-    
     if (nextState && "Notification" in window) {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         setNotificationsEnabled(true);
         localStorage.setItem("notifs_enabled", "true");
-        new Notification("Notícias Hoje", { body: "Notificações ativadas com sucesso!" });
       } else {
-        alert("Permissão de notificação negada pelo navegador.");
         setNotificationsEnabled(false);
         localStorage.setItem("notifs_enabled", "false");
         return;
@@ -98,10 +96,10 @@ export function App() {
     }
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = e.target.value;
-    setNotificationTime(time);
-    localStorage.setItem("notifs_time", time);
+  // Função auxiliar para limpar tags HTML residuais do resumo no frontend caso existam
+  const cleanSummary = (text: string) => {
+    if (!text) return "";
+    return text.replace(/<[^>]*>?/gm, "").trim();
   };
 
   return (
@@ -128,7 +126,7 @@ export function App() {
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             className={`px-4 py-2 rounded-full font-medium capitalize text-sm whitespace-nowrap transition-all ${
-              selectedCategory === cat
+              selectedCategory.toLowerCase() === cat.toLowerCase()
                 ? "bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/20"
                 : "bg-gray-900 text-gray-400 hover:text-white border border-gray-800"
             }`}
@@ -148,7 +146,7 @@ export function App() {
           <div className="text-center py-12 text-red-400">{error}</div>
         ) : items.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
-            Nenhuma notícia encontrada para esta categoria.
+            Nenhuma notícia encontrada para esta categoria. Adicione tópicos nas configurações.
           </div>
         ) : (
           <div className="space-y-4">
@@ -159,7 +157,7 @@ export function App() {
                   {item.category}
                 </span>
                 <h2 className="text-base font-bold mt-2 leading-snug">{item.title}</h2>
-                <p className="text-xs text-gray-400 mt-2 line-clamp-3 leading-relaxed">{item.summary}</p>
+                <p className="text-xs text-gray-400 mt-2 line-clamp-3 leading-relaxed">{cleanSummary(item.summary)}</p>
                 <div className="mt-4 pt-3 border-t border-gray-800/50 flex justify-between items-center">
                   <span className="text-[11px] text-gray-500 font-medium">{item.source}</span>
                   <a
@@ -209,20 +207,24 @@ export function App() {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
-                {topics.map((t, idx) => (
-                  <span
-                    key={idx}
-                    className="bg-gray-800 text-gray-200 text-xs px-3 py-1.5 rounded-full border border-gray-700 flex items-center gap-2"
-                  >
-                    {t}
-                    <button
-                      onClick={() => handleRemoveTopic(t)}
-                      className="text-gray-400 hover:text-red-400 font-bold"
+                {topics.length === 0 ? (
+                  <span className="text-xs text-gray-500">Nenhum tópico adicionado.</span>
+                ) : (
+                  topics.map((t, idx) => (
+                    <span
+                      key={idx}
+                      className="bg-gray-800 text-gray-200 text-xs px-3 py-1.5 rounded-full border border-gray-700 flex items-center gap-2"
                     >
-                      ✕
-                    </button>
-                  </span>
-                ))}
+                      {t}
+                      <button
+                        onClick={() => handleRemoveTopic(t)}
+                        className="text-gray-400 hover:text-red-400 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))
+                )}
               </div>
             </div>
 
@@ -248,7 +250,10 @@ export function App() {
                 <input
                   type="time"
                   value={notificationTime}
-                  onChange={handleTimeChange}
+                  onChange={(e) => {
+                    setNotificationTime(e.target.value);
+                    localStorage.setItem("notifs_time", e.target.value);
+                  }}
                   className="bg-gray-800 text-white text-sm px-3 py-1.5 rounded-lg border border-gray-700 outline-none"
                 />
               </div>
