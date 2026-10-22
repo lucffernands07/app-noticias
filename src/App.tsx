@@ -18,6 +18,7 @@ export function App() {
 
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const navRef = useRef<HTMLDivElement>(null);
 
   const PRESET_OPTIONS = [
     "Tecnologia",
@@ -59,6 +60,16 @@ export function App() {
       setSelectedCategory("geral");
     }
   }, [topics]);
+
+  // Centraliza automaticamente o botão ativo na barra de navegação
+  useEffect(() => {
+    if (navRef.current) {
+      const activeBtn = navRef.current.querySelector(`[data-category="${selectedCategory.toLowerCase()}"]`);
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }
+  }, [selectedCategory]);
 
   useEffect(() => {
     async function loadData() {
@@ -194,10 +205,14 @@ export function App() {
         </button>
       </header>
 
-      <nav className="flex gap-2 overflow-x-auto py-3 px-4 border-b border-gray-800/50 max-w-3xl w-full mx-auto scrollbar-none touch-pan-x [-webkit-overflow-scrolling:touch]">
+      <nav 
+        ref={navRef}
+        className="flex gap-2 overflow-x-auto py-3 px-4 border-b border-gray-800/50 max-w-3xl w-full mx-auto scrollbar-none touch-pan-x [-webkit-overflow-scrolling:touch]"
+      >
         {categories.map((cat) => (
           <button
             key={cat}
+            data-category={cat.toLowerCase()}
             onClick={() => setSelectedCategory(cat)}
             className={`px-4 py-2 rounded-full font-medium capitalize text-sm whitespace-nowrap transition-all flex-shrink-0 ${
               selectedCategory.toLowerCase() === cat.toLowerCase()
