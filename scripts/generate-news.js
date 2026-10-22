@@ -5,12 +5,22 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Tópicos dinâmicos que o utilizador configurou
-const DEFAULT_KEYWORDS = ["Corinthians", "Política", "Tecnologia", "IA"];
+// Sem tópicos pré-definidos. Lê exclusivamente do ficheiro de tópicos do repositório (topics.json)
+function getKeywords() {
+  try {
+    const topicsPath = path.join(__dirname, '../topics.json');
+    if (fs.existsSync(topicsPath)) {
+      const data = JSON.parse(fs.readFileSync(topicsPath, 'utf8'));
+      return data.topics || [];
+    }
+  } catch (e) {
+    console.error("Erro ao ler topics.json:", e);
+  }
+  return []; // Retorna vazio se não houver tópicos definidos
+}
 
 function cleanText(input) {
   if (!input) return "";
-  // Remove tags HTML e links indesejados
   let out = input.replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, "$1");
   out = out.replace(/<[^>]*>/g, " ");
   out = out.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1");
@@ -67,9 +77,10 @@ async function fetchGoogleNewsFeed(keyword) {
 }
 
 async function main() {
+  const keywords = getKeywords();
   let allItems = [];
 
-  for (const kw of DEFAULT_KEYWORDS) {
+  for (const kw of keywords) {
     const items = await fetchGoogleNewsFeed(kw);
     allItems.push(...items);
   }
@@ -86,7 +97,7 @@ async function main() {
 
   const output = {
     fetchedAt: new Date().toISOString(),
-    categories: DEFAULT_KEYWORDS,
+    categories: keywords,
     items: allItems
   };
 
@@ -94,8 +105,7 @@ async function main() {
   if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
 
   fs.writeFileSync(path.join(targetDir, 'news.json'), JSON.stringify(output, null, 2));
-  console.log(`Sucesso! ${allItems.length} notícias guardadas.`);
+  console.log(`Sucesso! ${allItems.length} notícias guardadas para ${keywords.length} tópicos.`);
 }
 
 main();
-    
