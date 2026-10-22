@@ -10,8 +10,10 @@ const DEFAULT_KEYWORDS = ["Corinthians", "Política", "Tecnologia", "IA"];
 
 function cleanText(input) {
   if (!input) return "";
-  let out = input.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1");
+  // Remove tags HTML e links indesejados
+  let out = input.replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, "$1");
   out = out.replace(/<[^>]*>/g, " ");
+  out = out.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1");
   out = out.replace(/&amp;/g, "&")
              .replace(/&lt;/g, "<")
              .replace(/&gt;/g, ">")
