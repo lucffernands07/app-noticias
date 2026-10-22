@@ -11,6 +11,7 @@ export function App() {
   
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [topics, setTopics] = useState<string[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [newTopic, setNewTopic] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
@@ -19,8 +20,8 @@ export function App() {
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
-  // Sugestões predefinidas para o utilizador escolher rapidamente com um clique
-  const PRESET_SUGGESTIONS = [
+  // Lista de tópicos predefinidos para a caixa de seleção
+  const PRESET_OPTIONS = [
     "Tecnologia",
     "Política",
     "Economia",
@@ -95,7 +96,12 @@ export function App() {
     const updated = [...topics, formatted];
     setTopics(updated);
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
-    if (!topicToAdd) setNewTopic("");
+    
+    if (topicToAdd) {
+      setSelectedPreset("");
+    } else {
+      setNewTopic("");
+    }
 
     setSuccessMessage("Tópico adicionado com sucesso!");
     setTimeout(() => setSuccessMessage(null), 3000);
@@ -260,51 +266,58 @@ export function App() {
               </div>
             )}
 
-            <div className="mb-6 space-y-3">
-              <label className="text-sm font-semibold text-cyan-400">Gerir Tópicos Manuais</label>
+            <div className="mb-6 space-y-4">
+              <label className="text-sm font-semibold text-cyan-400">Gerir Tópicos</label>
               
-              {/* Caixa de opções / Sugestões rápidas para escolha */}
+              {/* Caixa de seleção (Dropdown) com os tópicos predefinidos */}
               <div className="space-y-1.5">
-                <span className="text-[11px] text-gray-400">Escolha rápida de tópicos populares:</span>
-                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 bg-gray-950/40 border border-gray-800 rounded-xl">
-                  {PRESET_SUGGESTIONS.map((suggestion) => {
-                    const isSelected = topics.map(t => t.toLowerCase()).includes(suggestion.toLowerCase());
-                    return (
-                      <button
-                        key={suggestion}
-                        onClick={() => !isSelected && handleAddTopic(suggestion)}
-                        disabled={isSelected}
-                        className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
-                          isSelected 
-                            ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400 opacity-60 cursor-not-allowed" 
-                            : "bg-gray-800 border-gray-700 text-gray-300 hover:border-cyan-500 hover:text-white"
-                        }`}
-                      >
-                        {isSelected ? `✓ ${suggestion}` : `+ ${suggestion}`}
-                      </button>
-                    );
-                  })}
+                <span className="text-[11px] text-gray-400">Selecionar a partir de tópicos populares:</span>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedPreset}
+                    onChange={(e) => setSelectedPreset(e.target.value)}
+                    className="flex-1 bg-gray-800 text-white px-3 py-2.5 rounded-xl border border-gray-700 text-sm outline-none focus:border-cyan-500"
+                  >
+                    <option value="">-- Escolher um tópico --</option>
+                    {PRESET_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => selectedPreset && handleAddTopic(selectedPreset)}
+                    disabled={!selectedPreset}
+                    className={`font-bold px-4 py-2 rounded-xl text-sm transition-colors ${
+                      selectedPreset ? "bg-cyan-500 text-black hover:bg-cyan-400" : "bg-gray-800 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Adicionar
+                  </button>
                 </div>
               </div>
 
-              {/* Campo livre para digitar qualquer outro tópico */}
-              <div className="flex gap-2 pt-2">
-                <input
-                  type="text"
-                  value={newTopic}
-                  onChange={(e) => setNewTopic(e.target.value)}
-                  placeholder="Ou digite outro tópico personalizado..."
-                  className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-xl border border-gray-700 text-sm outline-none focus:border-cyan-500"
-                />
-                <button
-                  onClick={() => handleAddTopic()}
-                  className="bg-cyan-500 text-black font-bold px-4 py-2 rounded-xl text-sm hover:bg-cyan-400 transition-colors"
-                >
-                  Adicionar
-                </button>
+              {/* Campo alternativo opcional para digitar se quiser */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[11px] text-gray-400">Ou digite outro tópico personalizado:</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newTopic}
+                    onChange={(e) => setNewTopic(e.target.value)}
+                    placeholder="Ex: Criptomoedas, Cinema..."
+                    className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-xl border border-gray-700 text-sm outline-none focus:border-cyan-500"
+                  />
+                  <button
+                    onClick={() => handleAddTopic()}
+                    className="bg-gray-800 text-cyan-400 border border-gray-700 font-bold px-4 py-2 rounded-xl text-sm hover:bg-gray-700 transition-colors"
+                  >
+                    Digitar
+                  </button>
+                </div>
               </div>
 
-              {/* Tópicos atualmente ativos do utilizador */}
+              {/* Tópicos atualmente ativos */}
               <div className="pt-2">
                 <span className="text-[11px] text-gray-400 block mb-1.5">Os seus tópicos ativos:</span>
                 <div className="flex flex-wrap gap-2">
@@ -375,4 +388,4 @@ export function App() {
 }
 
 export default App;
-            
+                                         
