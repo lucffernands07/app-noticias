@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { fetchNews } from "./lib/api";
 import { sendSummaryNow } from "./lib/notifications";
 import { useNotificationScheduler } from "./lib/useNotificationScheduler";
+import { useNotificationSettings } from "./lib/settings";
 import type { NewsItem } from "./types";
-import type { NotificationSettings } from "./lib/settings";
 
 export function App() {
   const [items, setItems] = useState<NewsItem[]>([]);
@@ -16,11 +16,9 @@ export function App() {
   const [topics, setTopics] = useState<string[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
-  // Estados de Notificação alinhados com o módulo original
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
-  const [notificationTime, setNotificationTime] = useState<string>("08:00");
-  const [lastNotifiedAt, setLastNotifiedAt] = useState<string | undefined>(undefined);
+
+  // Utiliza o gestor de configurações oficial do projeto
+  const { settings, update, requestPermission, markNotified } = useNotificationSettings();
 
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -41,51 +39,23 @@ export function App() {
     "Saúde"
   ];
 
-  // Carrega configurações do localStorage ao iniciar
+  // Carrega os tópicos salvos no localStorage ao iniciar
   useEffect(() => {
     const savedTopics = localStorage.getItem("user_custom_topics");
     if (savedTopics) {
       try {
-        setTopics(JSON.parse(savedTopics));
+        const parsed = JSON.parse(savedTopics);
+        setTopics(parsed);
+        // Sincroniza com as categorias de alerta do settings
+        update({ alertCategories: parsed });
       } catch (e) {
         setTopics([]);
       }
     }
+  }, [update]);
 
-    const savedNotifs = localStorage.getItem("notifs_enabled");
-    if (savedNotifs) {
-      try {
-        setNotificationsEnabled(JSON.parse(savedNotifs));
-      } catch {
-        setNotificationsEnabled(false);
-      }
-    }
-
-    const savedTime = localStorage.getItem("notifs_time");
-    if (savedTime) setNotificationTime(savedTime);
-
-    const savedLast = localStorage.getItem("last_notified_at");
-    if (savedLast) setLastNotifiedAt(savedLast);
-  }, []);
-
-  // Objeto de configurações compatível com o tipo NotificationSettings original
-  const notificationSettings: NotificationSettings = {
-    pushEnabled: notificationsEnabled,
-    alertTime: notificationTime,
-    frequency: "diario",
-    alertCategories: topics as any,
-    lastNotifiedAt: lastNotifiedAt,
-  };
-
-  // Callback para atualizar o registo de que o resumo de hoje foi enviado
-  const markNotified = () => {
-    const nowIso = new Date().toISOString();
-    setLastNotifiedAt(nowIso);
-    localStorage.setItem("last_notified_at", nowIso);
-  };
-
-  // Ativa o agendador original de notificações em segundo plano enquanto a aba estiver aberta
-  useNotificationScheduler(notificationSettings, markNotified);
+  // Ativa o agendador de notificações em segundo plano
+  useNotificationScheduler(settings, markNotified);
 
   useEffect(() => {
     const activeTopics = ["geral", ...topics];
@@ -94,7 +64,7 @@ export function App() {
     if (!activeTopics.map(t => t.toLowerCase()).includes(selectedCategory.toLowerCase())) {
       setSelectedCategory("geral");
     }
-  }, [topics]);
+  }, [topics, selectedCategory]);
 
   // Centraliza automaticamente o botão ativo na barra de navegação
   useEffect(() => {
@@ -132,6 +102,7 @@ export function App() {
     const updated = [...topics, selectedPreset];
     setTopics(updated);
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
+    update({ alertCategories: updated });
     setSelectedPreset("");
 
     setSuccessMessage("Tópico adicionado com sucesso!");
@@ -142,25 +113,18 @@ export function App() {
     const updated = topics.filter(t => t !== topicToRemove);
     setTopics(updated);
     localStorage.setItem("user_custom_topics", JSON.stringify(updated));
+    update({ alertCategories: updated });
   };
 
   const handleToggleNotifications = async () => {
-    const nextState = !notificationsEnabled;
-    if (nextState && "Notification" in window) {
-      const permission = await Notification.requestPermission();
+    if (!settings.pushEnabled) {
+      const permission = await requestPermission();
       if (permission === "granted") {
-        setNotificationsEnabled(true);
-        localStorage.setItem("notifs_enabled", "true");
-        // Dispara o resumo de teste imediatamente usando o módulo original
-        await sendSummaryNow(topics as any, "diario");
-      } else {
-        setNotificationsEnabled(false);
-        localStorage.setItem("notifs_enabled", "false");
-        return;
+        // Dispara um teste imediato para confirmar permissões
+        await sendSummaryNow(topics, settings.frequency);
       }
     } else {
-      setNotificationsEnabled(nextState);
-      localStorage.setItem("notifs_enabled", JSON.stringify(nextState));
+      update({ pushEnabled: false });
     }
   };
 
@@ -394,7 +358,7 @@ export function App() {
                 <button
                   onClick={handleToggleNotifications}
                   className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
-                    notificationsEnabled ? "bg-cyan-500 justify-end" : "bg-gray-700 justify-start"
+                    settings.pushEnabled ? "bg-cyan-500 justify-end" : "bg-gray-700 justify-start"
                   }`}
                 >
                   <span className="bg-white w-4 h-4 rounded-full shadow-md"></span>
@@ -405,10 +369,9 @@ export function App() {
                 <span className="text-sm">Horário do resumo</span>
                 <input
                   type="time"
-                  value={notificationTime}
+                  value={settings.alertTime}
                   onChange={(e) => {
-                    setNotificationTime(e.target.value);
-                    localStorage.setItem("notifs_time", e.target.value);
+                    update({ alertTime: e.target.value });
                   }}
                   className="bg-gray-800 text-white text-sm px-3 py-1.5 rounded-lg border border-gray-700 outline-none"
                 />
@@ -429,3 +392,4 @@ export function App() {
 }
 
 export default App;
+        
