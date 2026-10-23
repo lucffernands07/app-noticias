@@ -135,6 +135,19 @@ export function useNotificationSettings() {
     });
   }, []);
 
+  // Reseta o contador do último envio para permitir testes imediatos
+  const resetNotificationTimer = useCallback(() => {
+    setSettings((prev) => {
+      const next = { ...prev, lastNotifiedAt: null };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
   return {
     settings,
     update,
@@ -142,6 +155,7 @@ export function useNotificationSettings() {
     requestPermission,
     toggleCategory,
     markNotified,
+    resetNotificationTimer,
     persist,
   };
 }
