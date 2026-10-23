@@ -14,7 +14,8 @@ export function App() {
   
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [topics, setTopics] = useState<string[]>([]);
-  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [newTopicInput, setNewTopicInput] = useState<string>("");
+  const [isSubmittingTopic, setIsSubmittingTopic] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Utiliza o gestor de configurações oficial do projeto (incluindo o resetNotificationTimer)
@@ -23,21 +24,6 @@ export function App() {
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   const navRef = useRef<HTMLDivElement>(null);
-
-  const PRESET_OPTIONS = [
-    "Tecnologia",
-    "Política",
-    "Economia",
-    "Brasil",
-    "Mundo",
-    "Inteligência Artificial",
-    "Futebol",
-    "Fórmula 1",
-    "Ciência",
-    "Astronomia",
-    "Cultura",
-    "Saúde"
-  ];
 
   // Carrega os tópicos salvos no localStorage ao iniciar
   useEffect(() => {
@@ -94,19 +80,45 @@ export function App() {
     loadData();
   }, [selectedCategory, topics]);
 
-  const handleAddTopic = () => {
-    if (!selectedPreset) return;
+  const handleAddTopic = async () => {
+    const cleanTopic = newTopicInput.trim();
+    if (!cleanTopic) return;
     
-    if (topics.map(t => t.toLowerCase()).includes(selectedPreset.toLowerCase())) return;
+    if (topics.map(t => t.toLowerCase()).includes(cleanTopic.toLowerCase())) {
+      setSuccessMessage("Este tópico já existe na lista!");
+      setTimeout(() => setSuccessMessage(null), 3000);
+      return;
+    }
 
-    const updated = [...topics, selectedPreset];
-    setTopics(updated);
-    localStorage.setItem("user_custom_topics", JSON.stringify(updated));
-    update({ alertCategories: updated });
-    setSelectedPreset("");
+    setIsSubmittingTopic(true);
+    setSuccessMessage(null);
 
-    setSuccessMessage("Tópico adicionado com sucesso!");
-    setTimeout(() => setSuccessMessage(null), 3000);
+    try {
+      // Faz o pedido seguro ao seu Cloudflare Worker recém-criado
+      const workerUrl = "https://app-noticias-api.lucianoffernands.workers.dev"; // URL do seu Worker
+      const res = await fetch(workerUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: cleanTopic })
+      });
+
+      if (!res.ok) {
+        throw new Error("Erro ao comunicar com o servidor de tópicos.");
+      }
+
+      const updated = [...topics, cleanTopic];
+      setTopics(updated);
+      localStorage.setItem("user_custom_topics", JSON.stringify(updated));
+      update({ alertCategories: updated });
+      setNewTopicInput("");
+
+      setSuccessMessage("Tópico adicionado e enviado para a nuvem com sucesso!");
+    } catch (err: any) {
+      setSuccessMessage("Erro: " + (err.message || "Não foi possível guardar o tópico."));
+    } finally {
+      setIsSubmittingTopic(false);
+      setTimeout(() => setSuccessMessage(null), 4000);
+    }
   };
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -120,7 +132,6 @@ export function App() {
     if (!settings.pushEnabled) {
       const permission = await requestPermission();
       if (permission === "granted") {
-        // Dispara um teste imediato para confirmar permissões
         await sendSummaryNow(topics, settings.frequency);
       }
     } else {
@@ -239,7 +250,7 @@ export function App() {
             <span className="text-3xl p-3 bg-cyan-500/10 text-cyan-400 rounded-2xl border border-cyan-500/20">⚙️</span>
             <h2 className="text-lg font-bold text-white">Nenhuma notícia encontrada</h2>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Para começar a acompanhar o conteúdo, clique no ícone de engrenagem <strong className="text-cyan-400 font-semibold">(⚙️)</strong> no topo para escolher os seus tópicos de interesse.
+              Para começar a acompanhar o conteúdo, clique no ícone de engrenagem <strong className="text-cyan-400 font-semibold">(⚙️)</strong> no topo para adicionar os seus tópicos de interesse.
             </p>
           </div>
         ) : (
@@ -297,28 +308,24 @@ export function App() {
               <label className="text-sm font-semibold text-cyan-400">Gerir Tópicos</label>
               
               <div className="space-y-1.5">
-                <span className="text-[11px] text-gray-400">Escolha um tópico para adicionar:</span>
+                <span className="text-[11px] text-gray-400">Adicionar novo tópico (ex: Hortolândia):</span>
                 <div className="flex gap-2">
-                  <select
-                    value={selectedPreset}
-                    onChange={(e) => setSelectedPreset(e.target.value)}
+                  <input
+                    type="text"
+                    placeholder="Digite um novo tópico..."
+                    value={newTopicInput}
+                    onChange={(e) => setNewTopicInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddTopic(); }}
                     className="flex-1 bg-gray-800 text-white px-3 py-2.5 rounded-xl border border-gray-700 text-sm outline-none focus:border-cyan-500"
-                  >
-                    <option value="">-- Selecionar tópico --</option>
-                    {PRESET_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   <button
                     onClick={handleAddTopic}
-                    disabled={!selectedPreset}
-                    className={`font-bold px-4 py-2 rounded-xl text-sm transition-colors ${
-                      selectedPreset ? "bg-cyan-500 text-black hover:bg-cyan-400" : "bg-gray-800 text-gray-500 cursor-not-allowed"
+                    disabled={!newTopicInput.trim() || isSubmittingTopic}
+                    className={`font-bold px-4 py-2 rounded-xl text-sm transition-colors whitespace-nowrap ${
+                      newTopicInput.trim() && !isSubmittingTopic ? "bg-cyan-500 text-black hover:bg-cyan-400" : "bg-gray-800 text-gray-500 cursor-not-allowed"
                     }`}
                   >
-                    Adicionar
+                    {isSubmittingTopic ? "A adicionar..." : "Adicionar"}
                   </button>
                 </div>
               </div>
@@ -427,4 +434,4 @@ export function App() {
 }
 
 export default App;
-                                                  
+          
