@@ -1,5 +1,6 @@
 // Aceita 'geral' ou qualquer outro tema/palavra-chave escolhido
 export type Category = string;
+export const CATEGORIES = DEFAULT_CATEGORIES;
 
 export type NewsItem = {
   title: string;
