@@ -8,8 +8,9 @@ export type NotificationSettings = {
   // Categories the user wants alerts for. "geral" is excluded from selection
   // since it is an aggregate — only real topic categories are selectable.
   alertCategories: Category[];
-  alertTime: string; // "HH:MM" 24h format
+  alertTime: string; // "HH:MM" 24h format (Horário inicial)
   frequency: Frequency;
+  intervalHours: number | null; // null = a cada 24h (diário), ou número de 1 a 12
   // ISO timestamp of the last delivered summary, used to avoid duplicates.
   lastNotifiedAt: string | null;
 };
@@ -21,6 +22,7 @@ export const DEFAULT_SETTINGS: NotificationSettings = {
   alertCategories: [],
   alertTime: "08:00",
   frequency: "diario",
+  intervalHours: null, // Padrão desativado (24h/diário)
   lastNotifiedAt: null,
 };
 
@@ -151,7 +153,7 @@ export function isAlertTime(now: Date, alertTime: string): boolean {
   return now.getHours() === h && now.getMinutes() === m;
 }
 
-// Returns true if a summary was already delivered today.
+// Retorna true se a notificação já foi enviada hoje (para o modo 24h/diário)
 export function alreadyNotifiedToday(
   lastNotifiedAt: string | null,
   now: Date
@@ -165,4 +167,31 @@ export function alreadyNotifiedToday(
     last.getDate() === now.getDate()
   );
 }
-  
+
+// Valida se já passou o tempo necessário para o próximo envio com base no intervalo ou no modo diário
+export function shouldSendNotification(
+  lastNotifiedAt: string | null,
+  alertTime: string,
+  intervalHours: number | null,
+  now: Date
+): boolean {
+  // Se nunca foi notificado, verifica se bateu no horário inicial configurado
+  if (!lastNotifiedAt) {
+    return isAlertTime(now, alertTime);
+  }
+
+  const last = new Date(lastNotifiedAt);
+  if (isNaN(last.getTime())) return isAlertTime(now, alertTime);
+
+  // Se o intervalo estiver desativado (null), usa a regra de 24h (diário no alertTime)
+  if (!intervalHours) {
+    if (alreadyNotifiedToday(lastNotifiedAt, now)) return false;
+    return isAlertTime(now, alertTime);
+  }
+
+  // Se o intervalo estiver ativo (ex: a cada 2h), calcula se já passou o tempo desde o último envio
+  const diffMs = now.getTime() - last.getTime();
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+
+  return diffMs >= intervalMs;
+}
