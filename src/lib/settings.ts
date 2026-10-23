@@ -189,15 +189,22 @@ export function shouldSendNotification(
   intervalHours: number | null,
   now: Date
 ): boolean {
-  // Se nunca foi notificado, verifica se bateu no horário inicial configurado
+  // Se nunca foi notificado (ou acabou de zerar o contador), 
+  // verifica se o horário atual já atingiu ou ultrapassou o horário inicial configurado
   if (!lastNotifiedAt) {
-    return isAlertTime(now, alertTime);
+    const [h, m] = alertTime.split(":").map((n) => parseInt(n, 10));
+    if (isNaN(h) || isNaN(m)) return false;
+    
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const alertMinutes = h * 60 + m;
+    
+    return currentMinutes >= alertMinutes;
   }
 
   const last = new Date(lastNotifiedAt);
   if (isNaN(last.getTime())) return isAlertTime(now, alertTime);
 
-  // Se o intervalo estiver desativado (null), usa a regra de 24h (diário no alertTime)
+  // Se o intervalo estiver desativado (null), usa a regra de 24h (diário)
   if (!intervalHours) {
     if (alreadyNotifiedToday(lastNotifiedAt, now)) return false;
     return isAlertTime(now, alertTime);
@@ -209,3 +216,4 @@ export function shouldSendNotification(
 
   return diffMs >= intervalMs;
 }
+
