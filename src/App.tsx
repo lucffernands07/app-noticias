@@ -17,7 +17,7 @@ export function App() {
   const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
-  // Estados de Notificação
+  // Estados de Notificação alinhados com o módulo original
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [notificationTime, setNotificationTime] = useState<string>("08:00");
   const [lastNotifiedAt, setLastNotifiedAt] = useState<string | undefined>(undefined);
@@ -53,7 +53,13 @@ export function App() {
     }
 
     const savedNotifs = localStorage.getItem("notifs_enabled");
-    if (savedNotifs) setNotificationsEnabled(JSON.parse(savedNotifs));
+    if (savedNotifs) {
+      try {
+        setNotificationsEnabled(JSON.parse(savedNotifs));
+      } catch {
+        setNotificationsEnabled(false);
+      }
+    }
 
     const savedTime = localStorage.getItem("notifs_time");
     if (savedTime) setNotificationTime(savedTime);
@@ -62,23 +68,23 @@ export function App() {
     if (savedLast) setLastNotifiedAt(savedLast);
   }, []);
 
-  // Objeto de configurações exigido pelo scheduler
+  // Objeto de configurações compatível com o tipo NotificationSettings original
   const notificationSettings: NotificationSettings = {
     pushEnabled: notificationsEnabled,
     alertTime: notificationTime,
     frequency: "diario",
-    alertCategories: topics,
+    alertCategories: topics as any,
     lastNotifiedAt: lastNotifiedAt,
   };
 
-  // Callback chamado quando o resumo é disparado com sucesso
+  // Callback para atualizar o registo de que o resumo de hoje foi enviado
   const markNotified = () => {
     const nowIso = new Date().toISOString();
     setLastNotifiedAt(nowIso);
     localStorage.setItem("last_notified_at", nowIso);
   };
 
-  // Ativa o motor que verifica o horário e envia as notificações em segundo plano enquanto o app estiver aberto
+  // Ativa o agendador original de notificações em segundo plano enquanto a aba estiver aberta
   useNotificationScheduler(notificationSettings, markNotified);
 
   useEffect(() => {
@@ -145,8 +151,8 @@ export function App() {
       if (permission === "granted") {
         setNotificationsEnabled(true);
         localStorage.setItem("notifs_enabled", "true");
-        // Dispara um teste imediato para confirmar permissão ativa
-        await sendSummaryNow(topics, "diario");
+        // Dispara o resumo de teste imediatamente usando o módulo original
+        await sendSummaryNow(topics as any, "diario");
       } else {
         setNotificationsEnabled(false);
         localStorage.setItem("notifs_enabled", "false");
@@ -423,4 +429,3 @@ export function App() {
 }
 
 export default App;
-            
