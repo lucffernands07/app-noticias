@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { fetchNews } from "./lib/api";
 import { sendSummaryNow } from "./lib/notifications";
-import { useNotificationScheduler } from "./lib/notification-scheduler";
+import { useNotificationScheduler } from "./lib/useNotificationScheduler";
 import type { NewsItem } from "./types";
 import type { NotificationSettings } from "./lib/settings";
 
