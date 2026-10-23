@@ -5,11 +5,12 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'topics.json' # Evita loop infinito caso o worker atualize o topics.json e dispare outro push imediato na main (opcional, mas recomendado)
+      - 'topics.json'
   schedule:
-    # Executa a cada hora (no minuto 0)
     - cron: '0 * * * *'
-  workflow_dispatch: # Permite disparar manualmente se quiser
+  repository_dispatch:
+    types: [update-topics]
+  workflow_dispatch:
 
 permissions:
   contents: write # Alterado de 'read' para 'write' para permitir commits do script
