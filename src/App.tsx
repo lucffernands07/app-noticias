@@ -366,7 +366,7 @@ export function App() {
               </div>
 
               <div className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl border border-gray-800">
-                <span className="text-sm">Horário do resumo</span>
+                <span className="text-sm">Horário inicial</span>
                 <input
                   type="time"
                   value={settings.alertTime}
@@ -375,6 +375,27 @@ export function App() {
                   }}
                   className="bg-gray-800 text-white text-sm px-3 py-1.5 rounded-lg border border-gray-700 outline-none"
                 />
+              </div>
+
+              <div className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl border border-gray-800">
+                <span className="text-sm">Intervalo de repetição</span>
+                <select
+                  value={settings.intervalHours || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    update({ intervalHours: val ? parseInt(val, 10) : null });
+                  }}
+                  className="bg-gray-800 text-white text-sm px-3 py-1.5 rounded-lg border border-gray-700 outline-none"
+                >
+                  <option value="">A cada 24 horas (Diário)</option>
+                  <option value="1">A cada 1 hora</option>
+                  <option value="2">A cada 2 horas</option>
+                  <option value="3">A cada 3 horas</option>
+                  <option value="4">A cada 4 horas</option>
+                  <option value="6">A cada 6 horas</option>
+                  <option value="8">A cada 8 horas</option>
+                  <option value="12">A cada 12 horas</option>
+                </select>
               </div>
             </div>
 
