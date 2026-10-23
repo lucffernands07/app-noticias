@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Category } from "@/types";
 import { sendSummaryNow } from "@/lib/notifications";
 import {
-  alreadyNotifiedToday,
-  isAlertTime,
+  shouldSendNotification,
   type NotificationSettings,
 } from "@/lib/settings";
 
@@ -20,7 +19,7 @@ export function useNotificationScheduler(
       return;
     if (settings.alertCategories.length === 0) return;
 
-    // Verificação a cada 15 segundos para maior precisão no minuto programado
+    // Verificação a cada 15 segundos para maior precisão
     const CHECK_INTERVAL = 15_000;
 
     const check = async () => {
@@ -31,9 +30,10 @@ export function useNotificationScheduler(
       
       const now = new Date();
       
-      // Valida se o horário atual bate com o configurado e se já não foi enviado hoje
-      if (!isAlertTime(now, s.alertTime)) return;
-      if (alreadyNotifiedToday(s.lastNotifiedAt, now)) return;
+      // Valida utilizando a nova regra unificada (Diário ou Intervalo de Horas)
+      if (!shouldSendNotification(s.lastNotifiedAt, s.alertTime, s.intervalHours, now)) {
+        return;
+      }
 
       const ok = await sendSummaryNow(
         s.alertCategories as Category[],
@@ -54,6 +54,7 @@ export function useNotificationScheduler(
     settings.pushEnabled,
     settings.alertTime,
     settings.frequency,
+    settings.intervalHours,
     settings.alertCategories,
     settings.lastNotifiedAt,
     markNotified,
