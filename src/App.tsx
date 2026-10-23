@@ -17,8 +17,8 @@ export function App() {
   const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Utiliza o gestor de configurações oficial do projeto
-  const { settings, update, requestPermission, markNotified } = useNotificationSettings();
+  // Utiliza o gestor de configurações oficial do projeto (incluindo o resetNotificationTimer)
+  const { settings, update, requestPermission, markNotified, resetNotificationTimer } = useNotificationSettings();
 
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -397,6 +397,20 @@ export function App() {
                   <option value="12">A cada 12 horas</option>
                 </select>
               </div>
+
+              {/* Botão para zerar o temporizador e testar imediatamente */}
+              <div className="pt-1">
+                <button
+                  onClick={() => {
+                    resetNotificationTimer();
+                    setSuccessMessage("Contador resetado com sucesso! Pode testar o novo agendamento.");
+                    setTimeout(() => setSuccessMessage(null), 4000);
+                  }}
+                  className="w-full bg-gray-800 hover:bg-gray-700 text-cyan-400 font-semibold py-2.5 px-4 rounded-xl text-xs border border-cyan-500/30 transition-colors flex items-center justify-center gap-2"
+                >
+                  🔄 Resetar Contador (Zerar para Teste)
+                </button>
+              </div>
             </div>
 
             <button
@@ -413,4 +427,4 @@ export function App() {
 }
 
 export default App;
-        
+                                                  
