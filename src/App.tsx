@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { fetchNews } from "./lib/api";
+import { sendSummaryNow } from "./lib/notifications";
+import { useNotificationScheduler } from "./lib/notification-scheduler";
 import type { NewsItem } from "./types";
+import type { NotificationSettings } from "./lib/settings";
 
 export function App() {
   const [items, setItems] = useState<NewsItem[]>([]);
@@ -13,8 +16,11 @@ export function App() {
   const [topics, setTopics] = useState<string[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // Estados de Notificação
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [notificationTime, setNotificationTime] = useState<string>("08:00");
+  const [lastNotifiedAt, setLastNotifiedAt] = useState<string | undefined>(undefined);
 
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -35,6 +41,7 @@ export function App() {
     "Saúde"
   ];
 
+  // Carrega configurações do localStorage ao iniciar
   useEffect(() => {
     const savedTopics = localStorage.getItem("user_custom_topics");
     if (savedTopics) {
@@ -50,7 +57,29 @@ export function App() {
 
     const savedTime = localStorage.getItem("notifs_time");
     if (savedTime) setNotificationTime(savedTime);
+
+    const savedLast = localStorage.getItem("last_notified_at");
+    if (savedLast) setLastNotifiedAt(savedLast);
   }, []);
+
+  // Objeto de configurações exigido pelo scheduler
+  const notificationSettings: NotificationSettings = {
+    pushEnabled: notificationsEnabled,
+    alertTime: notificationTime,
+    frequency: "diario",
+    alertCategories: topics,
+    lastNotifiedAt: lastNotifiedAt,
+  };
+
+  // Callback chamado quando o resumo é disparado com sucesso
+  const markNotified = () => {
+    const nowIso = new Date().toISOString();
+    setLastNotifiedAt(nowIso);
+    localStorage.setItem("last_notified_at", nowIso);
+  };
+
+  // Ativa o motor que verifica o horário e envia as notificações em segundo plano enquanto o app estiver aberto
+  useNotificationScheduler(notificationSettings, markNotified);
 
   useEffect(() => {
     const activeTopics = ["geral", ...topics];
@@ -116,6 +145,8 @@ export function App() {
       if (permission === "granted") {
         setNotificationsEnabled(true);
         localStorage.setItem("notifs_enabled", "true");
+        // Dispara um teste imediato para confirmar permissão ativa
+        await sendSummaryNow(topics, "diario");
       } else {
         setNotificationsEnabled(false);
         localStorage.setItem("notifs_enabled", "false");
@@ -392,4 +423,4 @@ export function App() {
 }
 
 export default App;
-                      
+            
