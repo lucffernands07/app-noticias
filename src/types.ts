@@ -1,6 +1,5 @@
 // Aceita 'geral' ou qualquer outro tema/palavra-chave escolhido
 export type Category = string;
-export const CATEGORIES = DEFAULT_CATEGORIES;
 
 export type NewsItem = {
   title: string;
@@ -18,7 +17,7 @@ export type NewsResponse = {
   error?: string;
 };
 
-// Categorias padrão sugeridas para seleção
+// Categorias padrão sugeridas para seleção (declaradas PRIMEIRO)
 export const DEFAULT_CATEGORIES: { id: Category; label: string }[] = [
   { id: "geral", label: "Geral" },
   { id: "ti", label: "TI" },
@@ -29,7 +28,10 @@ export const DEFAULT_CATEGORIES: { id: Category; label: string }[] = [
   { id: "politica", label: "Política" },
 ];
 
-// Mapeamento exigido pelo notifications.ts para exibir os nomes legíveis das opções disponíveis
+// Agora sim, declaradas DEPOIS para evitar o erro de inicialização
+export const CATEGORIES = DEFAULT_CATEGORIES;
+
+// Mapeamento exigido pelo notifications.ts para exibir os nomes legíveis
 export const CATEGORY_LABELS: Record<string, string> = {
   geral: "Geral",
   ti: "TI",
