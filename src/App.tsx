@@ -5,6 +5,45 @@ import { useNotificationScheduler } from "./lib/useNotificationScheduler";
 import { useNotificationSettings } from "./lib/settings";
 import type { NewsItem } from "./types";
 
+// Componentes de Ícones Minimalistas (SVG)
+const IconNewspaper = () => (
+  <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+    <path d="M18 14h-8" />
+    <path d="M15 18h-5" />
+    <path d="M10 6h8v4h-8V6Z" />
+  </svg>
+);
+
+const IconSettings = () => (
+  <svg className="w-5 h-5 text-gray-300 hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const IconClose = () => (
+  <svg className="w-5 h-5 text-gray-400 hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
+const IconRefresh = () => (
+  <svg className="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+    <path d="M21 3v5h-5" />
+  </svg>
+);
+
+const IconExternalLink = () => (
+  <svg className="w-3.5 h-3.5 text-cyan-400 inline ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="15 3 21 3 21 9" />
+    <line x1="10" y1="14" x2="21" y2="3" />
+  </svg>
+);
+
 export function App() {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [categories, setCategories] = useState<string[]>(["geral"]);
@@ -18,21 +57,18 @@ export function App() {
   const [isSubmittingTopic, setIsSubmittingTopic] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Utiliza o gestor de configurações oficial do projeto (incluindo o resetNotificationTimer)
   const { settings, update, requestPermission, markNotified, resetNotificationTimer } = useNotificationSettings();
 
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   const navRef = useRef<HTMLDivElement>(null);
 
-  // Carrega os tópicos salvos no localStorage ao iniciar
   useEffect(() => {
     const savedTopics = localStorage.getItem("user_custom_topics");
     if (savedTopics) {
       try {
         const parsed = JSON.parse(savedTopics);
         setTopics(parsed);
-        // Sincroniza com as categorias de alerta do settings
         update({ alertCategories: parsed });
       } catch (e) {
         setTopics([]);
@@ -40,7 +76,6 @@ export function App() {
     }
   }, [update]);
 
-  // Ativa o agendador de notificações em segundo plano
   useNotificationScheduler(settings, markNotified);
 
   useEffect(() => {
@@ -52,7 +87,6 @@ export function App() {
     }
   }, [topics, selectedCategory]);
 
-  // Centraliza automaticamente o botão ativo na barra de navegação
   useEffect(() => {
     if (navRef.current) {
       const activeBtn = navRef.current.querySelector(`[data-category="${selectedCategory.toLowerCase()}"]`);
@@ -94,8 +128,7 @@ export function App() {
     setSuccessMessage(null);
 
     try {
-      // Faz o pedido seguro ao seu Cloudflare Worker recém-criado
-      const workerUrl = "https://app-noticias-api.lucianoffernands.workers.dev"; // URL do seu Worker
+      const workerUrl = "https://app-noticias-api.lucianoffernands.workers.dev";
       const res = await fetch(workerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,7 +145,7 @@ export function App() {
       update({ alertCategories: updated });
       setNewTopicInput("");
 
-      setSuccessMessage("Tópico adicionado e enviado para a nuvem com sucesso!");
+      setSuccessMessage("Tópico adicionado com sucesso!");
     } catch (err: any) {
       setSuccessMessage("Erro: " + (err.message || "Não foi possível guardar o tópico."));
     } finally {
@@ -132,7 +165,7 @@ export function App() {
     if (!settings.pushEnabled) {
       const permission = await requestPermission();
       if (permission === "granted") {
-        await sendSummaryNow(topics, settings.frequency);
+        await sendSummaryNow(topics, settings.intervalHours, settings);
       }
     } else {
       update({ pushEnabled: false });
@@ -204,16 +237,19 @@ export function App() {
       <header className="p-4 border-b border-gray-800 flex justify-between items-center max-w-3xl w-full mx-auto">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
-            <span className="p-1.5 bg-cyan-500/10 text-cyan-400 rounded-lg border border-cyan-500/20">📰</span> 
+            <span className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-500/20 flex items-center justify-center">
+              <IconNewspaper />
+            </span> 
             Notícias Hoje
           </h1>
-          <p className="text-xs text-gray-400">Tendências em tempo real</p>
+          <p className="text-xs text-gray-400 mt-0.5">Tendências em tempo real</p>
         </div>
         <button 
           onClick={() => setIsSettingsOpen(true)}
-          className="p-2.5 bg-gray-900 border border-gray-800 rounded-xl hover:bg-gray-800 text-gray-300 transition-colors shadow-sm"
+          className="p-2.5 bg-gray-900 border border-gray-800 rounded-xl hover:bg-gray-800 transition-colors shadow-sm flex items-center justify-center"
+          aria-label="Configurações"
         >
-          ⚙️
+          <IconSettings />
         </button>
       </header>
 
@@ -247,10 +283,12 @@ export function App() {
           <div className="text-center py-12 text-red-400">{error}</div>
         ) : items.length === 0 ? (
           <div className="text-center py-12 px-6 bg-gray-900/40 border border-gray-800 rounded-2xl max-w-lg mx-auto mt-8 shadow-xl flex flex-col items-center gap-4">
-            <span className="text-3xl p-3 bg-cyan-500/10 text-cyan-400 rounded-2xl border border-cyan-500/20">⚙️</span>
+            <span className="p-3.5 bg-cyan-500/10 rounded-2xl border border-cyan-500/20">
+              <IconSettings />
+            </span>
             <h2 className="text-lg font-bold text-white">Nenhuma notícia encontrada</h2>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Para começar a acompanhar o conteúdo, clique no ícone de engrenagem <strong className="text-cyan-400 font-semibold">(⚙️)</strong> no topo para adicionar os seus tópicos de interesse.
+              Para começar a acompanhar o conteúdo, abra as configurações no topo para adicionar os seus tópicos de interesse.
             </p>
           </div>
         ) : (
@@ -276,7 +314,8 @@ export function App() {
                     rel="noopener noreferrer"
                     className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
                   >
-                    Ler matéria completa ↗
+                    Ler matéria completa
+                    <IconExternalLink />
                   </a>
                 </div>
               </div>
@@ -291,8 +330,9 @@ export function App() {
             <button
               onClick={() => setIsSettingsOpen(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white font-bold p-2"
+              aria-label="Fechar"
             >
-              ✕
+              <IconClose />
             </button>
             
             <h2 className="text-xl font-bold mb-1">Configurações</h2>
@@ -344,7 +384,8 @@ export function App() {
                         {t}
                         <button
                           onClick={() => handleRemoveTopic(t)}
-                          className="text-gray-400 hover:text-red-400 font-bold"
+                          className="text-gray-400 hover:text-red-400"
+                          aria-label={`Remover ${t}`}
                         >
                           ✕
                         </button>
@@ -371,6 +412,28 @@ export function App() {
                   <span className="bg-white w-4 h-4 rounded-full shadow-md"></span>
                 </button>
               </div>
+
+              {/* Seletor de Tópico de Destaque */}
+              {topics.length > 0 && (
+                <div className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl border border-gray-800">
+                  <div className="flex flex-col pr-2">
+                    <span className="text-sm">Tópico de Destaque</span>
+                    <span className="text-[10px] text-gray-400">Manchete principal na notificação</span>
+                  </div>
+                  <select
+                    value={settings.priorityTopic || ""}
+                    onChange={(e) => update({ priorityTopic: e.target.value })}
+                    className="bg-gray-800 text-cyan-400 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-gray-700 outline-none"
+                  >
+                    <option value="">Mais Recente</option>
+                    {topics.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl border border-gray-800">
                 <span className="text-sm">Horário inicial</span>
@@ -401,37 +464,3 @@ export function App() {
                   <option value="4">A cada 4 horas</option>
                   <option value="6">A cada 6 horas</option>
                   <option value="8">A cada 8 horas</option>
-                  <option value="12">A cada 12 horas</option>
-                </select>
-              </div>
-
-              {/* Botão para zerar o temporizador e testar imediatamente */}
-              <div className="pt-1">
-                <button
-                  onClick={() => {
-                    resetNotificationTimer();
-                    setSuccessMessage("Contador resetado com sucesso! Pode testar o novo agendamento.");
-                    setTimeout(() => setSuccessMessage(null), 4000);
-                  }}
-                  className="w-full bg-gray-800 hover:bg-gray-700 text-cyan-400 font-semibold py-2.5 px-4 rounded-xl text-xs border border-cyan-500/30 transition-colors flex items-center justify-center gap-2"
-                >
-                   Resetar Contador (Zerar para Teste)
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setIsSettingsOpen(false)}
-              className="w-full mt-6 bg-cyan-500 text-black font-bold py-3 rounded-xl hover:bg-cyan-400 text-sm transition-colors shadow-lg shadow-cyan-500/20"
-            >
-              Salvar e Fechar
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default App;
-          
