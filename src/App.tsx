@@ -415,7 +415,7 @@ export function App() {
                   }}
                   className="w-full bg-gray-800 hover:bg-gray-700 text-cyan-400 font-semibold py-2.5 px-4 rounded-xl text-xs border border-cyan-500/30 transition-colors flex items-center justify-center gap-2"
                 >
-                  🔄 Resetar Contador (Zerar para Teste)
+                   Resetar Contador (Zerar para Teste)
                 </button>
               </div>
             </div>
