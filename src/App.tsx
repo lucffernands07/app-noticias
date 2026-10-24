@@ -463,4 +463,36 @@ export function App() {
                   <option value="4">A cada 4 horas</option>
                   <option value="6">A cada 6 horas</option>
                   <option value="8">A cada 8 horas</option>
-                  <option value="12">A cada
+                  <option value="12">A cada 12 horas</option>
+                </select>
+              </div>
+
+              <div className="pt-1">
+                <button
+                  onClick={() => {
+                    resetNotificationTimer();
+                    setSuccessMessage("Contador resetado com sucesso! Pode testar o novo agendamento.");
+                    setTimeout(() => setSuccessMessage(null), 4000);
+                  }}
+                  className="w-full bg-gray-800 hover:bg-gray-700 text-cyan-400 font-semibold py-2.5 px-4 rounded-xl text-xs border border-cyan-500/30 transition-colors flex items-center justify-center gap-2"
+                >
+                  <IconRefresh />
+                  Resetar Contador (Zerar para Teste)
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsSettingsOpen(false)}
+              className="w-full mt-6 bg-cyan-500 text-black font-bold py-3 rounded-xl hover:bg-cyan-400 text-sm transition-colors shadow-lg shadow-cyan-500/20"
+            >
+              Salvar e Fechar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
